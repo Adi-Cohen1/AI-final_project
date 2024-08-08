@@ -4,7 +4,6 @@ import tkinter as tk
 from GoBoard import GoBoard
 from goDisplay import GoDisplay
 
-
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay):
         self.size = size
@@ -27,18 +26,26 @@ class GoGame:
         if board.board[x][y] is not None:
             return False
 
-        board_copy = [row.copy() for row in board.board]
-        board_copy[x][y] = color
+        # Make a copy of the board and place the stone
+        board_copy = GoBoard(self.size)
+        board_copy.board = [row.copy() for row in board.board]
+        board_copy.board[x][y] = color
 
-        for nx, ny in board.get_neighbors(x, y):
-            neighbor_color = board_copy[nx][ny]
-            if neighbor_color is not None and neighbor_color != color:
-                neighbor_group = board.get_group(nx, ny)
-                if not board.has_liberties(neighbor_group):
-                    return True
-
-        player_group = board.get_group(x, y)
-        if not board.has_liberties(player_group):
+        # Check if placing the stone results in a self-capture
+        player_group = board_copy.get_group(x, y)
+        if not board_copy.has_liberties(player_group):
+            # If no liberties, check if it’s capturing an opponent’s group
+            for nx, ny in board_copy.get_neighbors(x, y):
+                neighbor_color = board_copy.board[nx][ny]
+                if neighbor_color is not None and neighbor_color != color:
+                    neighbor_group = board_copy.get_group(nx, ny)
+                    if not board_copy.has_liberties(neighbor_group):
+                        # Opponent's group is captured
+                        continue
+                    else:
+                        # The move is illegal if it doesn’t result in a capture and causes self-capture
+                        return False
+            # If the move results in a self-capture
             return False
 
         return True
@@ -93,7 +100,6 @@ class GoGame:
         self.display.root.after(100, self.play_game_step)
 
     def end_game(self):
-
         if self.board and self.current_game < self.num_games:
             result = self.board.count_score()
             self.results.append(result)
@@ -107,13 +113,11 @@ class GoGame:
             self.current_color = 'BLACK'
             self.game_over = False
             self.display.root.after(1000, self.play_game_step)
-
         else:
             self.finished = True  # Ensure no more games are played
 
     def run(self):
         self.play_game_step()
-
 
 if __name__ == "__main__":
     size = 5  # Example size of the board

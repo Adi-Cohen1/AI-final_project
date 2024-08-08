@@ -13,8 +13,10 @@ class GoBoard:
         neighbors = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
         return [(nx, ny) for nx, ny in neighbors if self.is_on_board(nx, ny)]
 
-    def get_group(self, x: int, y: int) -> Set[Tuple[int, int]]:
-        color = self.board[x][y]
+    def get_group(self, x: int, y: int, board_copy=None) -> Set[Tuple[int, int]]:
+        if board_copy is None:
+            board_copy = self.board
+        color = board_copy[x][y]
         group = set()
         stack = [(x, y)]
         while stack:
@@ -22,14 +24,16 @@ class GoBoard:
             if (cx, cy) not in group:
                 group.add((cx, cy))
                 for nx, ny in self.get_neighbors(cx, cy):
-                    if self.board[nx][ny] == color:
+                    if board_copy[nx][ny] == color:
                         stack.append((nx, ny))
         return group
 
-    def has_liberties(self, group: Set[Tuple[int, int]]) -> bool:
+    def has_liberties(self, group: Set[Tuple[int, int]], board_copy=None) -> bool:
+        if board_copy is None:
+            board_copy = self.board
         for x, y in group:
             for nx, ny in self.get_neighbors(x, y):
-                if self.board[nx][ny] is None:
+                if board_copy[nx][ny] is None:
                     return True
         return False
 

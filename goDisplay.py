@@ -13,24 +13,23 @@ class GoDisplay:
 
     def draw_grid(self):
         for i in range(self.board_size):
-            self.canvas.create_line(15, 15 + i * 30, 15 + (self.board_size - 1) * 30, 15 + i * 30)
-            self.canvas.create_line(15 + i * 30, 15, 15 + i * 30, 15 + (self.board_size - 1) * 30)
-
-    def place_stone(self, x, y, color):
-        if color == 'BLACK':
-            self.canvas.create_oval(15 + x * 30 - 10, 15 + y * 30 - 10, 15 + x * 30 + 10, 15 + y * 30 + 10, fill='black', tags="stone")
-        elif color == 'WHITE':
-            self.canvas.create_oval(15 + x * 30 - 10, 15 + y * 30 - 10, 15 + x * 30 + 10, 15 + y * 30 + 10, fill='white', tags="stone")
+            self.canvas.create_line(15, 15 + i * 30, 15 + (self.board_size - 1) * 30, 15 + i * 30, fill='black')
+            self.canvas.create_line(15 + i * 30, 15, 15 + i * 30, 15 + (self.board_size - 1) * 30, fill='black')
 
     def display_board(self, board: GoBoard):
-        self.canvas.delete("stone")
+        self.canvas.delete("all")
+        self.draw_grid()
         for x in range(self.board_size):
             for y in range(self.board_size):
-                if board.board[x][y] == 'BLACK':
-                    self.place_stone(x, y, 'BLACK')
-                elif board.board[x][y] == 'WHITE':
-                    self.place_stone(x, y, 'WHITE')
+                stone = board.board[x][y]
+                if stone:
+                    self.draw_stone(x, y, stone)
+
+    def draw_stone(self, x: int, y: int, color: str):
+        x1, y1 = 15 + x * 30 - 13, 15 + y * 30 - 13
+        x2, y2 = x1 + 26, y1 + 26
+        self.canvas.create_oval(x1, y1, x2, y2, fill=color.lower(), outline='black')
 
     def display_results(self, results: List[Dict[str, int]]):
-        result_message = "\n".join([f'Game {i+1}: BLACK {result["BLACK"]}, WHITE {result["WHITE"]}' for i, result in enumerate(results)])
-        messagebox.showinfo("Game Results", result_message)
+        results_str = "\n".join([f"Game {i+1}: BLACK {result['BLACK']}, WHITE {result['WHITE']}" for i, result in enumerate(results)])
+        messagebox.showinfo("Game Results", results_str)
