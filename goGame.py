@@ -22,7 +22,8 @@ class GoGame:
 
     def random_move(self, board: GoBoard, color: str) -> Optional[Tuple[int, int]]:
         empty_positions = [(x, y) for x in range(self.size) for y in range(self.size) if board.board[x][y] is None]
-        return random.choice(empty_positions) if empty_positions else None
+        legal_moves = [pos for pos in empty_positions if self.is_legal_move(board,pos[0], pos[1], color)]
+        return random.choice(legal_moves) if legal_moves else None
 
     def is_legal_move(self, board: GoBoard, x: int, y: int, color: str) -> bool:
         if board.board[x][y] is not None:
@@ -70,8 +71,8 @@ class GoGame:
             return
 
         move = self.random_move(self.board, self.current_color)
-        if move is None or not self.is_legal_move(self.board, move[0], move[1], self.current_color):
-            # If no legal move is possible, end the game
+        if move is None:
+            # If no move is possible, end the game
             if self.board:
                 result = self.board.count_score()
                 self.results.append(result)
@@ -123,7 +124,7 @@ class GoGame:
 
 if __name__ == "__main__":
     size = 5  # Example size of the board
-    num_games = 1  # Example number of games to play
+    num_games = 2  # Example number of games to play
 
     root = tk.Tk()
     root.title("Go Game")

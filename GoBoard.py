@@ -41,6 +41,9 @@ class GoBoard:
     def remove_group(self, group: Set[Tuple[int, int]], color: str):
         for x, y in group:
             self.board[x][y] = None
+        print(" eaten: ")
+        print(color)
+        print(len(group))
         self.captured[color] += len(group)
 
     def play_move(self, x: int, y: int, color: str) -> bool:
@@ -64,20 +67,10 @@ class GoBoard:
             self.board = board_copy
             self.captured = captured_before
             return False
-
-        # Ko rule: Save the board state for checking in subsequent moves
-        if self.is_ko_violation():
-            self.board = board_copy
-            self.captured = captured_before
-            return False
-        else:
-            self.previous_boards.append([row.copy() for row in self.board])
-
         self.history.append((x, y, color, board_copy, captured_before))
         return True
 
-    def is_ko_violation(self) -> bool:
-        return any(board == self.board for board in self.previous_boards)
+
 
     def undo_move(self):
         if not self.history:
@@ -90,25 +83,59 @@ class GoBoard:
             self.previous_boards.pop()
 
     def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
+        """
+        Check if all empty spaces in the given group are fully surrounded by the specified color.
+        """
         for x, y in group:
             for nx, ny in self.get_neighbors(x, y):
                 if self.board[nx][ny] is None:
                     return False
                 elif self.board[nx][ny] != color:
-                    return False
+                    # If adjacent to any color other than the specified one,
+                    # check that all neighboring empty groups are surrounded by that color
+                    adjacent_group = self.get_group(nx, ny, self.board)
+                    if any(self.board[xx][yy] != color for xx, yy in adjacent_group if self.board[xx][yy] is not None):
+                        return False
         return True
 
     def count_score(self) -> Dict[str, int]:
+        """
+        Count the score for both BLACK and WHITE players.
+        The score is calculated as the number of empty spaces surrounded by the player's stones
+        plus the number of opponent's stones captured.
+        """
+
         def count_area(color: str) -> int:
+            """
+            Count the number of empty spaces surrounded by the given color.
+            """
             visited = set()
             score = 0
+
+            def flood_fill(x: int, y: int) -> Set[Tuple[int, int]]:
+                """
+                Perform a flood fill to find all connected empty spaces.
+                """
+                stack = [(x, y)]
+                group = set()
+                while stack:
+                    cx, cy = stack.pop()
+                    if (cx, cy) in group:
+                        continue
+                    group.add((cx, cy))
+                    for nx, ny in self.get_neighbors(cx, cy):
+                        if self.board[nx][ny] is None and (nx, ny) not in group:
+                            stack.append((nx, ny))
+                return group
+
             for x in range(self.size):
                 for y in range(self.size):
                     if self.board[x][y] is None and (x, y) not in visited:
-                        group = self.get_group(x, y, self.board)
-                        if self.is_surrounded(group, color):
-                            score += len(group)
-                        visited.update(group)
+                        empty_group = flood_fill(x, y)
+                        if self.is_surrounded(empty_group, color):
+                            score += len(empty_group)
+                        visited.update(empty_group)
+
             return score
 
         black_score = count_area('BLACK') + self.captured['WHITE']
