@@ -3,9 +3,12 @@ from typing import Optional, Tuple
 import tkinter as tk
 from GoBoard import GoBoard
 from goDisplay import GoDisplay
+from MCTS import MCTS  # Ensure MCTS is imported
+
 
 class GoGame:
-    def __init__(self, size: int, num_games: int, display: GoDisplay):
+    def __init__(self, size: int, num_games: int, display: GoDisplay, mcts_iterations: int = 1000,
+                 exploration_weight: float = 1.0):
         self.size = size
         self.num_games = num_games
         self.display = display
@@ -16,11 +19,8 @@ class GoGame:
         self.finished = False  # Flag to ensure we stop after finishing all games
         self.board = None
         self.previous_boards = set()  # To keep track of board states for ko detection
-        self.handicap_stones = []  # List to hold handicap stones
-
-
-
-
+        self.mcts_iterations = mcts_iterations  # Number of iterations for MCTS
+        self.exploration_weight = exploration_weight  # Exploration weight for MCTS
 
     def is_game_over(self) -> bool:
         black_moves = any(self.board.is_legal_move(x, y, 'BLACK') for x in range(self.size) for y in range(self.size))
@@ -42,7 +42,10 @@ class GoGame:
             self.display.root.after(700, self.play_game_step)
             return
 
-        move = self.board.random_move( self.current_color)
+        # Use MCTS for move selection
+        mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight)
+        move = mcts.mcts_search()
+
         if move is None:
             # If no move is possible, end the game
             if self.board:
@@ -72,7 +75,6 @@ class GoGame:
 
         self.display.root.after(500, self.play_game_step)
 
-
     def end_game(self):
         if self.board and self.current_game < self.num_games:
             result = self.board.count_score()
@@ -94,6 +96,7 @@ class GoGame:
     def run(self):
         self.play_game_step()
 
+
 if __name__ == "__main__":
     size = 5  # Example size of the board
     num_games = 1  # Example number of games to play
@@ -103,7 +106,7 @@ if __name__ == "__main__":
 
     display = GoDisplay(root, size)
 
-    game = GoGame(size, num_games, display)
+    game = GoGame(size, num_games, display, mcts_iterations=50, exploration_weight=1.0)
     game.run()
 
     root.mainloop()

@@ -1,5 +1,7 @@
+import random
 from typing import Dict, Set, Tuple, List, Optional
-from copy import deepcopy
+from copy import deepcopy, copy
+
 
 class GoBoard:
     def __init__(self, size: int):
@@ -70,8 +72,6 @@ class GoBoard:
         self.history.append((x, y, color, board_copy, captured_before))
         return True
 
-
-
     def undo_move(self):
         if not self.history:
             return
@@ -97,6 +97,63 @@ class GoBoard:
                     if any(self.board[xx][yy] != color for xx, yy in adjacent_group if self.board[xx][yy] is not None):
                         return False
         return True
+
+    def is_legal_move(self, x: int, y: int, color: str) -> bool:
+        if self.board[x][y] is not None:
+            return False
+
+        board_copy = [row.copy() for row in self.board]
+        board_copy[x][y] = color
+
+        # Ko rule: check if this move reverts the board to a previous state
+        if tuple(map(tuple, board_copy)) in self.previous_boards:
+            return False
+
+        # Check if move results in a capture or if it has liberties
+        for nx, ny in self.get_neighbors(x, y):
+            neighbor_color = board_copy[nx][ny]
+            if neighbor_color is not None and neighbor_color != color:
+                neighbor_group = self.get_group(nx, ny, board_copy)
+                if not self.has_liberties(neighbor_group, board_copy):
+                    return True
+
+        player_group = self.get_group(x, y, board_copy)
+        if not self.has_liberties(player_group, board_copy):
+            return False
+
+        return True
+
+    def get_legal_moves(self, color: str) -> List[Tuple[int, int]]:
+        """
+        Return a list of legal moves for the given color.
+        """
+        legal_moves = []
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.board[x][y] is None and self.is_legal_move(x, y, color):
+                    legal_moves.append((x, y))
+        return legal_moves
+
+    def random_move(self, color: str) -> Optional[Tuple[int, int]]:
+        legal_moves = self.get_legal_moves(color)
+        return random.choice(legal_moves) if legal_moves else None
+
+    def is_terminal(self,color):
+        # Check if there are no legal moves left for either player
+        if len(self.get_legal_moves(color)) == 0:
+            # Assume both players passed in a row if no moves are available
+            return True
+
+        return False
+    def evaluate_board(self, color: str) -> float:
+        """
+        Evaluate the board from the perspective of the given color.
+        """
+        opponent_color = self.opponent_color(color)
+        return self.count_score()[color] - self.count_score()[opponent_color]
+
+    def opponent_color(self, color: str) -> str:
+        return 'WHITE' if color == 'BLACK' else 'BLACK'
 
     def count_score(self) -> Dict[str, int]:
         """
@@ -141,3 +198,9 @@ class GoBoard:
         black_score = count_area('BLACK') + self.captured['WHITE']
         white_score = count_area('WHITE') + self.captured['BLACK']
         return {'BLACK': black_score, 'WHITE': white_score}
+
+    def copy(self):
+        # Create a deep copy of the GoBoard instance
+        new_board = GoBoard(self.size)
+        new_board.board = deepcopy(self.board)
+        return new_board
