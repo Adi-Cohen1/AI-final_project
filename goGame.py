@@ -34,7 +34,7 @@ class GoGame:
             return
 
         if self.board is None:
-            self.board = GoBoard(self.size)
+            self.board = GoBoard(self.size, self.previous_boards)
             self.current_color = 'BLACK'  # BLACK is the first player, I think it's duplicate code
             self.display.display_board(self.board)
             self.display.root.after(SPEED, self.play_game_step)  # like callback function

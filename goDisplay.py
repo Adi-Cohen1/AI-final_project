@@ -106,6 +106,7 @@ class GoDisplay:
             widget.destroy()
 
         # Create a label to display the results
-        results_str = "\n".join([f"Game {i+1}: BLACK {result['BLACK']}, WHITE {result['WHITE']}" for i, result in enumerate(results)])
+        # results_str = "\n".join([f"Game {i+1}: BLACK {result['BLACK']}, WHITE {result['WHITE']}" for i, result in enumerate(results)])
+        results_str = "\n".join([f"Game {i+1}: {'BLACK' if result['BLACK'] > result['WHITE'] else 'WHITE'}" for i, result in enumerate(results)])
         # messagebox.showinfo("Game Results", results_str)
         tk.Label(self.game_summary, text=results_str, font=("Arial", 14)).pack()

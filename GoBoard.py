@@ -4,12 +4,19 @@ from copy import deepcopy, copy
 
 oposite_color = {"BLACK": "WHITE", "WHITE": "BLACK"}
 class GoBoard:
-    def __init__(self, size: int):
+    def __init__(self, size: int, previous_boards):
         self.size = size
         self.board = [[None for _ in range(size)] for _ in range(size)]
+        # self.board = [['BLACK', 'BLACK', 'BLACK', 'WHITE', None],
+        #               ['BLACK', 'BLACK', 'BLACK', 'BLACK', 'WHITE'],
+        #               ['BLACK', 'BLACK', 'BLACK', None, 'WHITE'],
+        #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE'],
+        #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE']]
         self.captured = {'BLACK': 0, 'WHITE': 0}
         self.history = []  # Track moves for undo
-        self.previous_boards = []  # Track board states for Ko rule
+        # self.previous_boards = []  # Track board states for Ko rule
+        self.previous_boards = previous_boards
+        self.last_captured = {'BLACK': None, 'WHITE': None}
 
     def is_on_board(self, x: int, y: int) -> bool:
         return 0 <= x < self.size and 0 <= y < self.size
@@ -52,8 +59,8 @@ class GoBoard:
 
         board_copy = [row.copy() for row in self.board]
         captured_before = self.captured.copy()
-
         self.board[x][y] = color
+
         captured_any = False
         for nx, ny in self.get_neighbors(x, y):
             neighbor_color = self.board[nx][ny]
@@ -67,18 +74,45 @@ class GoBoard:
             self.board = board_copy
             self.captured = captured_before
             return False
+
         self.history.append((x, y, color, board_copy, captured_before))
         return True
 
-    def undo_move(self):
-        if not self.history:
-            return
-        x, y, color, board_copy, captured_before = self.history.pop()
-        self.board = board_copy
-        self.captured = captured_before
-        self.board[x][y] = None
-        if self.previous_boards:
-            self.previous_boards.pop()
+    def play_actual_move(self, x: int, y: int, color: str) -> bool:
+        if not self.is_on_board(x, y) or self.board[x][y] is not None:
+            return False
+
+        board_copy = [row.copy() for row in self.board]
+        captured_before = self.captured.copy()
+        self.board[x][y] = color
+
+        captured_any = False
+        for nx, ny in self.get_neighbors(x, y):
+            neighbor_color = self.board[nx][ny]
+            if neighbor_color is not None and neighbor_color != color:
+                neighbor_group = self.get_group(nx, ny)
+                if not self.has_liberties(neighbor_group):
+                    self.remove_group(neighbor_group, neighbor_color)
+                    captured_any = True
+                    self.last_captured[color] = neighbor_group
+
+        if not captured_any and not self.has_liberties(self.get_group(x, y)):
+            self.board = board_copy
+            self.captured = captured_before
+            return False
+
+        self.history.append((x, y, color, board_copy, captured_before))
+        return True
+
+    # def undo_move(self):
+    #     if not self.history:
+    #         return
+    #     x, y, color, board_copy, captured_before = self.history.pop()
+    #     self.board = board_copy
+    #     self.captured = captured_before
+    #     self.board[x][y] = None
+    #     if self.previous_boards:
+    #         self.previous_boards.pop()
 
     def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
         """
@@ -110,6 +144,9 @@ class GoBoard:
             neighbor_color = board_copy[nx][ny]
             if neighbor_color is not None and neighbor_color != color:
                 neighbor_group = self.get_group(nx, ny, board_copy)
+                # check:
+                if neighbor_group == self.last_captured[color]:
+                    return False
                 if not self.has_liberties(neighbor_group, board_copy):
                     return True
 
@@ -198,6 +235,6 @@ class GoBoard:
 
     def copy(self):
         # Create a deep copy of the GoBoard instance
-        new_board = GoBoard(self.size)
+        new_board = GoBoard(self.size, self.previous_boards)
         new_board.board = deepcopy(self.board)
         return new_board

@@ -37,14 +37,14 @@ class GoGame:
             return
 
         if self.board is None:
-            self.board = GoBoard(self.size)
+            self.board = GoBoard(self.size, self.previous_boards)
             self.current_color = 'BLACK'
             self.display.display_board(self.board)
             self.display.root.after(self.speed, self.play_game_step)
             return
 
         if self.current_color == 'BLACK':
-            mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight, 2)
+            mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight)
             move = mcts.mcts_search()
         else:
             move = self.board.random_move(self.current_color)
@@ -65,7 +65,7 @@ class GoGame:
             return
 
         x, y = move
-        if self.board.play_move(x, y, self.current_color):
+        if self.board.play_actual_move(x, y, self.current_color): # todo play_move
             self.previous_boards.add(tuple(map(tuple, self.board.board)))
             self.current_color = 'WHITE' if self.current_color == 'BLACK' else 'BLACK'
             self.display.display_board(self.board)
@@ -101,14 +101,14 @@ class GoGame:
 
 if __name__ == "__main__":
     size = 5
-    num_games = 3
+    num_games = 6
 
     root = tk.Tk()
     root.title("Go Game")
 
     display = GoDisplay(root, size)
 
-    game = GoGame(size, num_games, display, mcts_iterations=100, exploration_weight=1.0)
+    game = GoGame(size, num_games, display, mcts_iterations=50, exploration_weight=2)
     game.run()
 
     root.mainloop()
