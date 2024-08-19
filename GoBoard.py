@@ -2,7 +2,7 @@ import random
 from typing import Dict, Set, Tuple, List, Optional
 from copy import deepcopy, copy
 
-
+oposite_color = {"BLACK": "WHITE", "WHITE": "BLACK"}
 class GoBoard:
     def __init__(self, size: int):
         self.size = size
@@ -43,9 +43,7 @@ class GoBoard:
     def remove_group(self, group: Set[Tuple[int, int]], color: str):
         for x, y in group:
             self.board[x][y] = None
-        print(" eaten: ")
-        print(color)
-        print(len(group))
+        # print(f"{oposite_color[color]} eat {len(group)} {color}S ")
         self.captured[color] += len(group)
 
     def play_move(self, x: int, y: int, color: str) -> bool:
@@ -138,13 +136,14 @@ class GoBoard:
         legal_moves = self.get_legal_moves(color)
         return random.choice(legal_moves) if legal_moves else None
 
-    def is_terminal(self,color):
+    def is_terminal(self, color):
         # Check if there are no legal moves left for either player
         if len(self.get_legal_moves(color)) == 0:
             # Assume both players passed in a row if no moves are available
             return True
 
         return False
+
     def evaluate_board(self, color: str) -> float:
         """
         Evaluate the board from the perspective of the given color.

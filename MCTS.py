@@ -21,6 +21,8 @@ class MCTSNode:
     def best_child(self, exploration_weight: float) -> Optional['MCTSNode']:
         if not self.children:
             return None
+
+        # self.children is a dict, so self.children.values() is an array of MCTSNodes
         return max(self.children.values(), key=lambda child: child.uct_score(exploration_weight))
 
     def uct_score(self, exploration_weight: float) -> float:
@@ -28,6 +30,8 @@ class MCTSNode:
             return float('inf')
         parent_visits = self.parent.visits if self.parent else 1
         return (self.value / self.visits) + exploration_weight * math.sqrt(math.log(parent_visits) / self.visits)
+
+
 class MCTS:
     def __init__(self, board: GoBoard, color: str, iterations: int, exploration_weight: float):
         self.board = board

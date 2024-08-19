@@ -42,9 +42,13 @@ class GoGame:
             self.display.root.after(700, self.play_game_step)
             return
 
-        # Use MCTS for move selection
-        mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight)
-        move = mcts.mcts_search()
+        if self.current_color == 'BLACK':
+            # Use MCTS for move selection
+            mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight)
+            move = mcts.mcts_search()
+            print("black turn")
+        else:
+            move = self.board.random_move(self.current_color)
 
         if move is None:
             # If no move is possible, end the game
@@ -52,16 +56,15 @@ class GoGame:
                 result = self.board.count_score()
                 self.results.append(result)
                 print(f'Game {self.current_game + 1}: BLACK {result["BLACK"]}, WHITE {result["WHITE"]}')
+                self.display.display_results(self.results)
+
             self.current_game += 1
             if self.current_game >= self.num_games:
                 self.end_game()
                 self.finished = True  # Stop further game processing
             else:
                 # Reset for the next game
-                self.board = None
-                self.game_over = False
-                self.previous_boards.clear()  # Clear previous board states for ko rule
-                self.display.root.after(500, self.play_game_step)
+                self.reset_game()
             return
 
         x, y = move
@@ -75,6 +78,13 @@ class GoGame:
 
         self.display.root.after(500, self.play_game_step)
 
+    def reset_game(self):
+        self.board = None
+        self.current_color = 'BLACK'
+        self.game_over = False
+        self.previous_boards.clear()
+        self.display.root.after(500, self.play_game_step)
+
     def end_game(self):
         if self.board and self.current_game < self.num_games:
             result = self.board.count_score()
@@ -85,11 +95,7 @@ class GoGame:
         if self.current_game < self.num_games:
             self.current_game += 1
             # Reset for the next game
-            self.board = None
-            self.current_color = 'BLACK'
-            self.game_over = False
-            self.previous_boards.clear()
-            self.display.root.after(500, self.play_game_step)
+            self.reset_game()
         else:
             self.finished = True  # Ensure no more games are played
 
@@ -106,7 +112,7 @@ if __name__ == "__main__":
 
     display = GoDisplay(root, size)
 
-    game = GoGame(size, num_games, display, mcts_iterations=50, exploration_weight=1.0)
+    game = GoGame(size, num_games, display, mcts_iterations=2, exploration_weight=1.0)
     game.run()
 
     root.mainloop()
