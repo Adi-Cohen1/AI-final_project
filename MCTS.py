@@ -1,14 +1,14 @@
 import math
 from typing import Optional, Tuple, Dict
-
+from concurrent.futures import ThreadPoolExecutor
 from GoBoard import GoBoard
-
+from Expectimax import Expectimax
 
 class MCTSNode:
     def __init__(self, board, color: str, move: Optional[Tuple[int, int]] = None, parent: Optional['MCTSNode'] = None):
         self.board = board
         self.color = color
-        self.move = move  # This stores the move that led to this node
+        self.move = move
         self.parent = parent
         self.children: Dict[Tuple[int, int], 'MCTSNode'] = {}
         self.visits = 0
@@ -21,8 +21,6 @@ class MCTSNode:
     def best_child(self, exploration_weight: float) -> Optional['MCTSNode']:
         if not self.children:
             return None
-
-        # self.children is a dict, so self.children.values() is an array of MCTSNodes
         return max(self.children.values(), key=lambda child: child.uct_score(exploration_weight))
 
     def uct_score(self, exploration_weight: float) -> float:
@@ -33,22 +31,29 @@ class MCTSNode:
 
 
 class MCTS:
-    def __init__(self, board: GoBoard, color: str, iterations: int, exploration_weight: float):
+    def __init__(self, board: GoBoard, color: str, iterations: int, exploration_weight: float, expectimax_depth: int):
         self.board = board
         self.color = color
         self.iterations = iterations
         self.exploration_weight = exploration_weight
+        self.expectimax_depth = expectimax_depth
 
     def mcts_search(self) -> Optional[Tuple[int, int]]:
         root = MCTSNode(self.board, self.color)
 
-        for _ in range(self.iterations):
-            node = self._select(root)
-            reward = self._simulate(node)
-            self._backpropagate(node, reward)
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(self._run_simulation, root) for _ in range(self.iterations)]
+            for future in futures:
+                node, reward = future.result()
+                self._backpropagate(node, reward)
 
         best_node = root.best_child(0)
         return best_node.move if best_node else None
+
+    def _run_simulation(self, root: MCTSNode):
+        node = self._select(root)
+        reward = self._simulate(node)
+        return node, reward
 
     def _select(self, node: MCTSNode) -> MCTSNode:
         while not node.board.is_terminal(node.color):
@@ -71,18 +76,9 @@ class MCTS:
         return node.best_child(self.exploration_weight)
 
     def _simulate(self, node: MCTSNode) -> float:
-        board_copy = node.board.copy()
-        current_color = node.color
-        while not board_copy.is_terminal(current_color):
-            move = board_copy.random_move(current_color)
-            if move:
-                board_copy.play_move(*move, current_color)
-                current_color = 'WHITE' if current_color == 'BLACK' else 'BLACK'
-        return self._evaluate_board(board_copy, node.color)
-
-    def _evaluate_board(self, board: GoBoard, color: str) -> float:
-        scores = board.count_score()
-        return scores[color] - scores[board.opponent_color(color)]
+        expectimax_agent = Expectimax(node.board, node.color)
+        _, value = expectimax_agent.expectimax(self.expectimax_depth)
+        return value
 
     def _backpropagate(self, node: MCTSNode, reward: float):
         while node is not None:

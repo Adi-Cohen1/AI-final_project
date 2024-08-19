@@ -102,7 +102,9 @@ class GoBoard:
 
         board_copy = [row.copy() for row in self.board]
         board_copy[x][y] = color
-
+        # Ko rule: check if this move reverts the board to a previous state
+        if tuple(map(tuple, board_copy)) in self.previous_boards:
+            return False
         # Check if move results in a capture or if it has liberties
         for nx, ny in self.get_neighbors(x, y):
             neighbor_color = board_copy[nx][ny]
@@ -145,7 +147,7 @@ class GoBoard:
         Evaluate the board from the perspective of the given color.
         """
         opponent_color = self.opponent_color(color)
-        return self.count_score()[color] - self.count_score()[opponent_color]
+        return self.count_score()[color]
 
     def opponent_color(self, color: str) -> str:
         return 'WHITE' if color == 'BLACK' else 'BLACK'
