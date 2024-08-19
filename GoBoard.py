@@ -103,10 +103,6 @@ class GoBoard:
         board_copy = [row.copy() for row in self.board]
         board_copy[x][y] = color
 
-        # Ko rule: check if this move reverts the board to a previous state
-        if tuple(map(tuple, board_copy)) in self.previous_boards:
-            return False
-
         # Check if move results in a capture or if it has liberties
         for nx, ny in self.get_neighbors(x, y):
             neighbor_color = board_copy[nx][ny]
@@ -125,12 +121,12 @@ class GoBoard:
         """
         Return a list of legal moves for the given color.
         """
-        legal_moves = []
-        for x in range(self.size):
-            for y in range(self.size):
-                if self.board[x][y] is None and self.is_legal_move(x, y, color):
-                    legal_moves.append((x, y))
-        return legal_moves
+        return [
+            (x, y)
+            for x in range(self.size)
+            for y in range(self.size)
+            if self.board[x][y] is None and self.is_legal_move(x, y, color)
+        ]
 
     def random_move(self, color: str) -> Optional[Tuple[int, int]]:
         legal_moves = self.get_legal_moves(color)
@@ -176,9 +172,10 @@ class GoBoard:
                 group = set()
                 while stack:
                     cx, cy = stack.pop()
-                    if (cx, cy) in group:
+                    if (cx, cy) in group or (cx, cy) in visited:
                         continue
                     group.add((cx, cy))
+                    visited.add((cx, cy))
                     for nx, ny in self.get_neighbors(cx, cy):
                         if self.board[nx][ny] is None and (nx, ny) not in group:
                             stack.append((nx, ny))
@@ -190,7 +187,6 @@ class GoBoard:
                         empty_group = flood_fill(x, y)
                         if self.is_surrounded(empty_group, color):
                             score += len(empty_group)
-                        visited.update(empty_group)
 
             return score
 
