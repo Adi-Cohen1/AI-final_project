@@ -48,10 +48,10 @@ class GoGame:
 
         if self.current_color == 'BLACK':
             # Monte Carlo strategy:
-            # move = self.monte_carlo_strategy()
+            move = self.monte_carlo_strategy()
 
             # Expectimax strategy:
-            move = self.expectimax_strategy()
+            # move = self.expectimax_strategy()
         else:
             move = self.board.random_move(self.current_color)
 
@@ -82,7 +82,7 @@ class GoGame:
         self.display.root.after(self.speed, self.play_game_step)
 
     def monte_carlo_strategy(self):
-        mcts = MCTS(self.board, self.current_color, mcts_iterations=10, exploration_weight=0.1)
+        mcts = MCTS(self.board, self.current_color, mcts_iterations=50, exploration_weight=0.1)
         move = mcts.mcts_search()
         return move
 

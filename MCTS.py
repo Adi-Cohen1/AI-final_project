@@ -39,7 +39,6 @@ class MCTS:
         self.color = color
         self.iterations = mcts_iterations
         self.exploration_weight = exploration_weight
-        self.expectimax_depth = 3
 
     def mcts_search(self) -> Optional[Tuple[int, int]]:
         root = MCTSNode(self.board, self.color)
@@ -78,21 +77,16 @@ class MCTS:
 
         # Getting value to node using simulate random game (original MCTS):
         i = 0
-        while not board_copy.is_terminal(current_color) and i < 30:
+        while not board_copy.is_terminal(current_color) and i < 20:
             move = board_copy.random_move(current_color)
             if move:
                 board_copy.play_move(*move, current_color)
                 current_color = 'WHITE' if current_color == 'BLACK' else 'BLACK'
                 i += 1
 
-        # return self._evaluate_board(board_copy, node.color)
-        # return board_copy.evaluate_board(node.color)
-        return board_copy.evaluate_board_using_heuristic(node.color)
+        return self._evaluate_board(board_copy, "BLACK")
+        # return board_copy.evaluate_board_using_heuristic("BLACK")
 
-        # Getting value to node using Expectimax:
-        # expectimax_agent = Expectimax(board_copy, current_color)
-        # move, value = expectimax_agent.expectimax(depth=3)
-        # return value
 
     def _evaluate_board(self, board: GoBoard, color: str) -> float:
         scores = board.count_score()
