@@ -2,7 +2,6 @@ import random
 from typing import Dict, Set, Tuple, List, Optional
 from copy import deepcopy, copy
 
-oposite_color = {"BLACK": "WHITE", "WHITE": "BLACK"}
 class GoBoard:
     def __init__(self, size: int, previous_boards):
         self.size = size
@@ -13,7 +12,7 @@ class GoBoard:
         #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE'],
         #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE']]
         self.captured = {'BLACK': 0, 'WHITE': 0}
-        self.history = []  # Track moves for undo
+        # self.history = []  # Track moves for undo
         # self.previous_boards = []  # Track board states for Ko rule
         self.previous_boards = previous_boards
         self.last_captured = {'BLACK': None, 'WHITE': None}
@@ -75,7 +74,7 @@ class GoBoard:
             self.captured = captured_before
             return False
 
-        self.history.append((x, y, color, board_copy, captured_before))
+        # self.history.append((x, y, color, board_copy, captured_before))
         return True
 
     def play_actual_move(self, x: int, y: int, color: str) -> bool:
@@ -101,7 +100,7 @@ class GoBoard:
             self.captured = captured_before
             return False
 
-        self.history.append((x, y, color, board_copy, captured_before))
+        # self.history.append((x, y, color, board_copy, captured_before))
         return True
 
     # def undo_move(self):
@@ -114,21 +113,33 @@ class GoBoard:
     #     if self.previous_boards:
     #         self.previous_boards.pop()
 
+    # def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
+    #     """
+    #     Check if all empty spaces in the given group are fully surrounded by the specified color.
+    #     """
+    #     for x, y in group:
+    #         for nx, ny in self.get_neighbors(x, y):
+    #             if self.board[nx][ny] is None:
+    #                 return False
+    #             elif self.board[nx][ny] != color:
+    #                 # If adjacent to any color other than the specified one,
+    #                 # check that all neighboring empty groups are surrounded by that color
+    #                 adjacent_group = self.get_group(nx, ny, self.board)
+    #                 if any(self.board[xx][yy] != color for xx, yy in adjacent_group if self.board[xx][yy] is not None):
+    #                     return False
+    #     return True
+
     def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
         """
         Check if all empty spaces in the given group are fully surrounded by the specified color.
         """
         for x, y in group:
             for nx, ny in self.get_neighbors(x, y):
-                if self.board[nx][ny] is None:
-                    return False
+                if self.board[nx][ny] == None:
+                    return False  # Found an adjacent empty space
                 elif self.board[nx][ny] != color:
-                    # If adjacent to any color other than the specified one,
-                    # check that all neighboring empty groups are surrounded by that color
-                    adjacent_group = self.get_group(nx, ny, self.board)
-                    if any(self.board[xx][yy] != color for xx, yy in adjacent_group if self.board[xx][yy] is not None):
-                        return False
-        return True
+                    return False  # Found an adjacent stone that is not the specified color
+        return True  # All adjacent stones are of the specified color and no empty spaces are adjacent
 
     def is_legal_move(self, x: int, y: int, color: str) -> bool:
         if self.board[x][y] is not None:
@@ -186,6 +197,90 @@ class GoBoard:
         opponent_color = self.opponent_color(color)
         return self.count_score()[color]
 
+    # todo: I added some heuristic methods :
+    def stone_count(self, color: str) -> int:
+        return sum(row.count(color) for row in self.board)
+
+    def controlled_territory(self, color: str) -> int:
+        visited = set()
+        territory_score = 0
+
+        def flood_fill(x: int, y: int) -> Set[Tuple[int, int]]:
+            stack = [(x, y)]
+            group = set()
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in group or (cx, cy) in visited:
+                    continue
+                group.add((cx, cy))
+                visited.add((cx, cy))
+                if self.board[cx][cy] is None:  # Changed from '.' to None
+                    for nx, ny in self.get_neighbors(cx, cy):
+                        if (nx, ny) not in visited:
+                            stack.append((nx, ny))
+            return group
+
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.board[x][y] is None and (x, y) not in visited:  # Changed from '.' to None
+                    empty_group = flood_fill(x, y)
+                    if self.is_surrounded(empty_group, color):
+                        territory_score += len(empty_group)
+
+        return territory_score
+
+    def get_captures(self, color: str) -> int:
+        opponent = 'WHITE' if color == 'BLACK' else 'BLACK'
+        return self.captured[opponent]  # Assuming captures is a dictionary tracking captured stones
+
+    def potential_liberties(self, color: str) -> int:
+        visited = set()
+        liberty_count = 0
+
+        def count_liberties(x: int, y: int):
+            nonlocal liberty_count  # Declare that we are using the outer variable
+            stack = [(x, y)]
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in visited:
+                    continue
+                visited.add((cx, cy))
+                if self.board[cx][cy] == color:
+                    for nx, ny in self.get_neighbors(cx, cy):
+                        if self.board[nx][ny] is None:  # Changed from '.' to None
+                            liberty_count += 1
+                        elif self.board[nx][ny] != color:
+                            continue
+                        stack.append((nx, ny))
+
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.board[x][y] == color and (x, y) not in visited:
+                    count_liberties(x, y)
+
+        return liberty_count
+
+    def corner_and_edge_control(self, color: str) -> int:
+        score = 0
+        for x in range(self.size):
+            for y in range(self.size):
+                if self.board[x][y] == color:
+                    if (x in [0, self.size - 1] and y in [0, self.size - 1]) or \
+                            (x in [0, self.size - 1] or y in [0, self.size - 1]):
+                        score += 1  # Additional points for controlling corners and edges
+        return score
+
+    def evaluate_board_using_heuristic(self, color: str) -> int:
+        score = 0
+        score += self.stone_count(color) * 1  # Weighting can be adjusted
+        score += self.controlled_territory(color) * 5
+        score += self.get_captures(color) * 3
+        score += self.potential_liberties(color) * 2
+        score += self.corner_and_edge_control(color) * 4
+        return score
+
+    # todo: ^ end my adding ^
+
     def opponent_color(self, color: str) -> str:
         return 'WHITE' if color == 'BLACK' else 'BLACK'
 
@@ -232,6 +327,7 @@ class GoBoard:
         black_score = count_area('BLACK') + self.captured['WHITE']
         white_score = count_area('WHITE') + self.captured['BLACK']
         return {'BLACK': black_score, 'WHITE': white_score}
+
 
     def copy(self):
         # Create a deep copy of the GoBoard instance

@@ -100,6 +100,14 @@ class GoDisplay:
         x2, y2 = x1 + 40, y1 + 40
         self.canvas.create_oval(x1, y1, x2, y2, fill=color.lower(), outline='black')
 
+    def get_winner_name(self, result):
+        if result['BLACK'] > result['WHITE']:
+            return "BLACK"
+        elif result['BLACK'] < result['WHITE']:
+            return "WHITE"
+        else:
+            return "TIE"
+
     def display_results(self, results: List[Dict[str, int]]):
         # Clear previous content in game_summary frame
         for widget in self.game_summary.winfo_children():
@@ -107,6 +115,6 @@ class GoDisplay:
 
         # Create a label to display the results
         # results_str = "\n".join([f"Game {i+1}: BLACK {result['BLACK']}, WHITE {result['WHITE']}" for i, result in enumerate(results)])
-        results_str = "\n".join([f"Game {i+1}: {'BLACK' if result['BLACK'] > result['WHITE'] else 'WHITE'}" for i, result in enumerate(results)])
+        results_str = "\n".join([f"Game {i+1}: {self.get_winner_name(result)}" for i, result in enumerate(results)])
         # messagebox.showinfo("Game Results", results_str)
         tk.Label(self.game_summary, text=results_str, font=("Arial", 14)).pack()

@@ -3,7 +3,8 @@ from typing import Optional, Tuple
 import tkinter as tk
 from GoBoard import GoBoard
 from goDisplay import GoDisplay
-from MCTS import MCTS  # Ensure MCTS is imported
+from MCTS import MCTS
+from Expectimax import Expectimax
 
 
 class GoGame:
@@ -19,9 +20,11 @@ class GoGame:
         self.finished = False
         self.board = None
         self.previous_boards = set()
-        self.mcts_iterations = mcts_iterations
-        self.exploration_weight = exploration_weight
+        # self.mcts_iterations = mcts_iterations
+        # self.exploration_weight = exploration_weight
         self.speed = 100
+        self.first_turn = True
+        # self.expectimax_agent = Expectimax(self.current_color)
 
     def is_game_over(self) -> bool:
         black_moves = any(self.board.is_legal_move(x, y, 'BLACK') for x in range(self.size) for y in range(self.size))
@@ -44,8 +47,11 @@ class GoGame:
             return
 
         if self.current_color == 'BLACK':
-            mcts = MCTS(self.board, self.current_color, self.mcts_iterations, self.exploration_weight)
-            move = mcts.mcts_search()
+            # Monte Carlo strategy:
+            # move = self.monte_carlo_strategy()
+
+            # Expectimax strategy:
+            move = self.expectimax_strategy()
         else:
             move = self.board.random_move(self.current_color)
 
@@ -65,7 +71,7 @@ class GoGame:
             return
 
         x, y = move
-        if self.board.play_actual_move(x, y, self.current_color): # todo play_move
+        if self.board.play_actual_move(x, y, self.current_color): # todo play_actual_move
             self.previous_boards.add(tuple(map(tuple, self.board.board)))
             self.current_color = 'WHITE' if self.current_color == 'BLACK' else 'BLACK'
             self.display.display_board(self.board)
@@ -75,7 +81,22 @@ class GoGame:
 
         self.display.root.after(self.speed, self.play_game_step)
 
+    def monte_carlo_strategy(self):
+        mcts = MCTS(self.board, self.current_color, mcts_iterations=10, exploration_weight=0.1)
+        move = mcts.mcts_search()
+        return move
+
+    def expectimax_strategy(self):
+        if self.first_turn:  # expectimax with depth=4 always return (3,0) for the first turn, so no need to check.
+            move = (3, 0)
+            self.first_turn = False
+        else:
+            expectimax_agent = Expectimax(self.board, self.current_color)
+            move, value = expectimax_agent.expectimax(depth=4)
+        return move
+
     def reset_game(self):
+        self.first_turn = True
         self.board = None
         self.current_color = 'BLACK'
         self.game_over = False
@@ -101,14 +122,14 @@ class GoGame:
 
 if __name__ == "__main__":
     size = 5
-    num_games = 6
+    num_games = 10
 
     root = tk.Tk()
     root.title("Go Game")
 
     display = GoDisplay(root, size)
 
-    game = GoGame(size, num_games, display, mcts_iterations=50, exploration_weight=2)
+    game = GoGame(size, num_games, display)
     game.run()
 
     root.mainloop()

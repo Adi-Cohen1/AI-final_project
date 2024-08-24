@@ -1,3 +1,4 @@
+import random
 from typing import Tuple, Optional, Dict
 
 
@@ -6,6 +7,10 @@ class Expectimax:
         self.board = board
         self.color = color
         self.memo: Dict[str, float] = {}  # Memoization dictionary
+
+    # def __init__(self, color):
+    #     self.color = color
+    #     self.memo: Dict[str, float] = {}  # Memoization dictionary
 
     def expectimax(self, depth: int) -> Tuple[Optional[Tuple[int, int]], float]:
         """
@@ -24,30 +29,32 @@ class Expectimax:
 
         return best_move, best_value
 
+
     def _expectimax_search(self, board: 'GoBoard', color: str, depth: int) -> float:
-        board_key = self._board_to_key(board)
+        board_key = self._board_to_key(board.board)
 
         # Check memoization
         if (board_key, color, depth) in self.memo:
             return self.memo[(board_key, color, depth)]
 
         if depth == 0:
-            value = self.board.evaluate_board(color)
+            # value = board.evaluate_board(color)
+            value = board.evaluate_board_using_heuristic(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
         moves = board.get_legal_moves(color)
         if not moves:
-            value =  self.board.evaluate_board(color)
+            value = board.evaluate_board(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
-        if color == self.color:
+        if color == "BLACK":
             best_value = -float('inf')
             for move in moves:
                 board_copy = board.copy()
                 board_copy.play_move(*move, color)
-                value = self._expectimax_search(board_copy, self.board.opponent_color(color), depth - 1)
+                value = self._expectimax_search(board_copy, board.opponent_color(color), depth - 1)
                 best_value = max(best_value, value)
             self.memo[(board_key, color, depth)] = best_value
             return best_value
@@ -56,7 +63,7 @@ class Expectimax:
             for move in moves:
                 board_copy = board.copy()
                 board_copy.play_move(*move, color)
-                total_value += self._expectimax_search(board_copy, self.board.opponent_color(color), depth - 1)
+                total_value += self._expectimax_search(board_copy, board.opponent_color(color), depth - 1)
             average_value = total_value / len(moves) if moves else 0
             self.memo[(board_key, color, depth)] = average_value
             return average_value
