@@ -26,7 +26,7 @@ class GoGame:
         self.first_turn = True
         # self.expectimax_agent = Expectimax(self.current_color)
         self.random_agent_white = RandomAgent('WHITE')
-        self.greedy_agent_white = RandomAgent('WHITE')
+        self.greedy_agent_white = GreedyAgent('WHITE')
 
 
     def is_game_over(self) -> bool:
