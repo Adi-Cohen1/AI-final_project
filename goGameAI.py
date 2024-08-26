@@ -5,7 +5,10 @@ from GoBoard import GoBoard
 from goDisplay import GoDisplay
 from MCTS import MCTS
 from Expectimax import Expectimax
-from Agents import RandomAgent,GreedyAgent
+from Minimax import Minimax
+from MinimaxAlphaBeta import MinimaxAlphaBeta
+from Agents import RandomAgent, GreedyAgent
+
 
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay, mcts_iterations: int = 1000,
@@ -51,10 +54,16 @@ class GoGame:
 
         if self.current_color == 'BLACK':
             # Monte Carlo strategy:
-            move = self.monte_carlo_strategy()
+            # move = self.monte_carlo_strategy()
 
             # Expectimax strategy:
             # move = self.expectimax_strategy()
+
+            # Minimax strategy:
+            # move = self.minimax_strategy()
+
+            # Alpha Beta strategy:
+            move = self.alpha_beta_strategy()
         else:
             move = self.greedy_agent_white.getAction(self.board)
 
@@ -96,6 +105,16 @@ class GoGame:
         else:
             expectimax_agent = Expectimax(self.board, self.current_color)
             move, value = expectimax_agent.expectimax(depth=4)
+        return move
+
+    def minimax_strategy(self):
+        minimax_agent = Minimax(self.board, self.current_color)
+        move, value = minimax_agent.minimax(depth=4)
+        return move
+
+    def alpha_beta_strategy(self):
+        alpha_beta_agent = MinimaxAlphaBeta(self.board, self.current_color)
+        move, value = alpha_beta_agent.minimax(depth=4)
         return move
 
     def reset_game(self):
