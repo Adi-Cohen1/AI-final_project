@@ -2,6 +2,7 @@ import random
 from typing import Dict, Set, Tuple, List, Optional
 from copy import deepcopy, copy
 
+
 class GoBoard:
     def __init__(self, size: int, previous_boards):
         self.size = size
@@ -66,6 +67,7 @@ class GoBoard:
             if neighbor_color is not None and neighbor_color != color:
                 neighbor_group = self.get_group(nx, ny)
                 if not self.has_liberties(neighbor_group):
+                    self.previous_boards.add(tuple(map(tuple, self.board)))  # Track board state
                     self.remove_group(neighbor_group, neighbor_color)
                     captured_any = True
 
@@ -75,6 +77,8 @@ class GoBoard:
             return False
 
         # self.history.append((x, y, color, board_copy, captured_before))
+        # Update last moves history
+
         return True
 
     def play_actual_move(self, x: int, y: int, color: str) -> bool:
@@ -150,6 +154,7 @@ class GoBoard:
         # Ko rule: check if this move reverts the board to a previous state
         if tuple(map(tuple, board_copy)) in self.previous_boards:
             return False
+
         # Check if move results in a capture or if it has liberties
         for nx, ny in self.get_neighbors(x, y):
             neighbor_color = board_copy[nx][ny]
@@ -195,7 +200,10 @@ class GoBoard:
         Evaluate the board from the perspective of the given color.
         """
         opponent_color = self.opponent_color(color)
-        return self.count_score()[color]
+        return self.count_score()[color] - self.count_score()[opponent_color]
+
+    def get_state(self):
+        return self.board
 
     # todo: I added some heuristic methods :
     def stone_count(self, color: str) -> int:
@@ -327,7 +335,6 @@ class GoBoard:
         black_score = count_area('BLACK') + self.captured['WHITE']
         white_score = count_area('WHITE') + self.captured['BLACK']
         return {'BLACK': black_score, 'WHITE': white_score}
-
 
     def copy(self):
         # Create a deep copy of the GoBoard instance

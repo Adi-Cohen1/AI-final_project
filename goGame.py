@@ -1,10 +1,16 @@
 import random
 from typing import Optional, Tuple
 import tkinter as tk
+
+import numpy as np
+
 from GoBoard import GoBoard
 from goDisplay import GoDisplay
+from Agents import RandomAgent,GreedyAgent
+import matplotlib.pyplot as plt
 
-SPEED = 200
+
+SPEED = 1
 
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay):
@@ -19,6 +25,14 @@ class GoGame:
         self.board = None
         self.previous_boards = set()  # To keep track of board states for ko detection
         self.handicap_stones = []  # List to hold handicap stones
+        self.random_agent_white = RandomAgent('WHITE')
+        self.random_agent_black = GreedyAgent('BLACK')
+        self.black_wins = 0
+        self.white_wins = 0
+        self.captured_black = []
+        self.captured_white = []
+        self.territory_black = []
+        self.territory_white = []
 
     def is_game_over(self) -> bool:
         black_moves = any(self.board.is_legal_move(x, y, 'BLACK') for x in range(self.size) for y in range(self.size))
@@ -39,13 +53,15 @@ class GoGame:
             self.display.display_board(self.board)
             self.display.root.after(SPEED, self.play_game_step)  # like callback function
             return
-
-        move = self.board.random_move(self.current_color)
+        move = RandomAgent(self.current_color).getAction(self.board)
+        # move = self.board.random_move(self.current_color)
         if move is None:
             # If no move is possible, end the game
             if self.board:
                 result = self.board.count_score()
                 self.results.append(result)
+                self.update_statistics(result)
+
                 print(f'Game {self.current_game + 1}: BLACK {result["BLACK"]}, WHITE {result["WHITE"]}')
                 self.display.display_results(self.results)
 
@@ -80,10 +96,23 @@ class GoGame:
         self.previous_boards.clear()
         self.display.root.after(SPEED, self.play_game_step)
 
+    def update_statistics(self, result):
+        self.captured_black.append(self.board.captured['BLACK'])
+        self.captured_white.append(self.board.captured['WHITE'])
+        self.territory_black.append(self.board.controlled_territory('BLACK'))
+        self.territory_white.append(self.board.controlled_territory('WHITE'))
+
+        if result["BLACK"] > result["WHITE"]:
+            self.black_wins += 1
+        else:
+            self.white_wins += 1
+
+
     def end_game(self):
         if self.board and self.current_game < self.num_games:
             result = self.board.count_score()
             self.results.append(result)
+
             print(f'Game {self.current_game + 1} has ended: BLACK {result["BLACK"]}, WHITE {result["WHITE"]}')
             self.display.display_results(self.results)
 
@@ -98,13 +127,48 @@ class GoGame:
             # self.display.root.after(SPEED, self.play_game_step)
         else:
             self.finished = True  # Ensure no more games are played
+            self.visualize_statistics()
+
+    def visualize_statistics(self):
+        labels = ['Black Wins', 'White Wins']
+        wins = [self.black_wins, self.white_wins]
+
+        plt.bar(labels, wins, color=['black', 'gray'])
+        plt.xlabel('Player')
+        plt.ylabel('Number of Wins')
+        plt.title(f'Results After {self.num_games} Games')
+        plt.show()
+
+
+        plt.figure(figsize=(12, 6))
+        # Plotting captured stones
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.plot(range(len( self.captured_black)), self.captured_black, label='Black Captured', color='black')
+        plt.plot(range(len( self.captured_white)), self.captured_white, label='White Captured', color='green')
+        plt.xlabel('Game Number')
+        plt.ylabel('Stones Captured')
+        plt.title('Captured Stones Over Time')
+        plt.legend()
+
+
+        plt.subplot(1, 2, 2)
+        plt.plot(range(len( self.territory_black)), self.territory_black, label='Black Territory', color='blue')
+        plt.plot(range(len( self.territory_white)), self.territory_white, label='White Territory', color='orange')
+        plt.xlabel('Game Number')
+        plt.ylabel('Controlled Territory')
+        plt.title('Controlled Territory Over Time')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
 
     def run(self):
         self.play_game_step()
 
 if __name__ == "__main__":
     size = 5  # Example size of the board
-    num_games = 2  # Example number of games to play
+    num_games = 100  # Example number of games to play
 
     root = tk.Tk()
     root.title("Go Game")
