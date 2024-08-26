@@ -5,7 +5,7 @@ from GoBoard import GoBoard
 from goDisplay import GoDisplay
 from MCTS import MCTS
 from Expectimax import Expectimax
-
+from Agents import RandomAgent,GreedyAgent
 
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay, mcts_iterations: int = 1000,
@@ -25,6 +25,9 @@ class GoGame:
         self.speed = 100
         self.first_turn = True
         # self.expectimax_agent = Expectimax(self.current_color)
+        self.random_agent_white = RandomAgent('WHITE')
+        self.greedy_agent_white = RandomAgent('WHITE')
+
 
     def is_game_over(self) -> bool:
         black_moves = any(self.board.is_legal_move(x, y, 'BLACK') for x in range(self.size) for y in range(self.size))
@@ -53,7 +56,7 @@ class GoGame:
             # Expectimax strategy:
             # move = self.expectimax_strategy()
         else:
-            move = self.board.random_move(self.current_color)
+            move = self.greedy_agent_white.getAction(self.board)
 
         if move is None:
             if self.board:
