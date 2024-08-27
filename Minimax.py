@@ -60,8 +60,8 @@ class Minimax:
                 value = self._minimax_search(board_copy, board.opponent_color(color), depth - 1, True)
                 best_value = min(best_value, value)
                 best_value_for_black = max(best_value_for_black, value)
-            # self.memo[(board_key, color, depth)] = best_value
-            self.memo[(board_key, color, depth)] = best_value_for_black
+            self.memo[(board_key, color, depth)] = best_value
+            # self.memo[(board_key, color, depth)] = best_value_for_black
             return best_value
 
     def _board_to_key(self, board: 'GoBoard') -> str:

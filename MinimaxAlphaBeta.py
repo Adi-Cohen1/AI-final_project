@@ -67,8 +67,8 @@ class MinimaxAlphaBeta:
                 beta = min(beta, value)
                 if beta <= alpha:
                     break  # Alpha cut-off
-            # self.memo[(board_key, color, depth)] = best_value
-            self.memo[(board_key, color, depth)] = best_value_for_black
+            self.memo[(board_key, color, depth)] = best_value
+            # self.memo[(board_key, color, depth)] = best_value_for_black
             return best_value
 
     def _board_to_key(self, board: 'GoBoard') -> str:

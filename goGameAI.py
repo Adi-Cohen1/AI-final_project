@@ -26,7 +26,7 @@ class GoGame:
         self.finished = False
         self.board = None
         self.previous_boards = set()
-        self.speed = 20
+        self.speed = 1
         self.first_turn = True
         self.black_strategy = black_strategy
         self.white_strategy = while_strategy
@@ -41,6 +41,7 @@ class GoGame:
             "greedy": self.greedy_agent_black.getAction,
             "monte_carlo": lambda board: self.monte_carlo_strategy(),
             "expectimax": lambda board: self.expectimax_strategy(),
+            "alpha_beta": lambda board: self.minimax_strategy(),
             "minimax": lambda board: self.alpha_beta_strategy(),
         }
 
@@ -149,6 +150,7 @@ class GoGame:
             self.reset_game()
         else:
             self.finished = True
+            print(self.display.num_wins_by_games)
             print("end game")
 
     def run(self):
@@ -156,7 +158,7 @@ class GoGame:
 
 
 if __name__ == "__main__":
-    black_strategies = ["random", "greedy", "minimax", "expectimax", "monte_carlo"]
+    black_strategies = ["random", "greedy", "minimax", "alpha_beta", "expectimax", "monte_carlo"]
     white_strategies = ["random", "greedy"]
     if len(sys.argv) != 5 \
             or sys.argv[1] not in black_strategies \
