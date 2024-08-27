@@ -1,8 +1,6 @@
 import random
 from copy import deepcopy
-
 from GoBoard import GoBoard
-
 
 
 class Agent:
@@ -21,10 +19,10 @@ class RandomAgent(Agent):
         legal_moves = board.get_legal_moves(self.color)
         return random.choice(legal_moves) if legal_moves else None
 
-class GreedyAgent(Agent):
-    def __init__(self,color):
-        super().__init__(color)
 
+class GreedyAgent(Agent):
+    def __init__(self, color):
+        super().__init__(color)
 
     def getAction(self, board):
         legal_moves = board.get_legal_moves(self.color)

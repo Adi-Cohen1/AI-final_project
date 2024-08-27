@@ -10,7 +10,7 @@ from Agents import RandomAgent,GreedyAgent
 import matplotlib.pyplot as plt
 
 
-SPEED = 5000
+SPEED = 10
 
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay):

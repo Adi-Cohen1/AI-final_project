@@ -1,3 +1,4 @@
+import sys
 import random
 from typing import Optional, Tuple
 import tkinter as tk
@@ -12,11 +13,12 @@ from Agents import RandomAgent, GreedyAgent
 
 class GoGame:
 
-    def __init__(self, size: int, num_games: int, display: GoDisplay, mcts_iterations: int = 1000,
-                 exploration_weight: float = 1.0):
+    def __init__(self, size: int, num_games: int, black_strategy, while_strategy, display, is_display):
         self.size = size
         self.num_games = num_games
         self.display = display
+        if not is_display:
+            self.display.root.withdraw()  # Hide the root window
         self.results = []
         self.current_game = 0
         self.current_color = 'BLACK'
@@ -24,13 +26,29 @@ class GoGame:
         self.finished = False
         self.board = None
         self.previous_boards = set()
-        # self.mcts_iterations = mcts_iterations
-        # self.exploration_weight = exploration_weight
-        self.speed = 2
+        self.speed = 20
         self.first_turn = True
-        # self.expectimax_agent = Expectimax(self.current_color)
+        self.black_strategy = black_strategy
+        self.white_strategy = while_strategy
         self.random_agent_white = RandomAgent('WHITE')
+        self.random_agent_black = RandomAgent('BLACK')
         self.greedy_agent_white = GreedyAgent('WHITE')
+        self.greedy_agent_black = GreedyAgent('BLACK')
+
+        # Define a dictionary of strategies for BLACK
+        self.black_strategies = {
+            "random": self.random_agent_black.getAction,
+            "greedy": self.greedy_agent_black.getAction,
+            "monte_carlo": lambda board: self.monte_carlo_strategy(),
+            "expectimax": lambda board: self.expectimax_strategy(),
+            "minimax": lambda board: self.alpha_beta_strategy(),
+        }
+
+        # Define a dictionary of strategies for WHITE
+        self.white_strategies = {
+            "random": self.random_agent_white.getAction,
+            "greedy": self.greedy_agent_white.getAction,
+        }
 
 
     def is_game_over(self) -> bool:
@@ -40,6 +58,7 @@ class GoGame:
 
     def play_game_step(self):
         if self.finished:
+            print("game over")
             return
 
         if self.game_over:
@@ -53,20 +72,11 @@ class GoGame:
             self.display.root.after(self.speed, self.play_game_step)
             return
 
+        # Select the strategy based on the current color
         if self.current_color == 'BLACK':
-            # Monte Carlo strategy:
-            move = self.monte_carlo_strategy()
-
-            # Expectimax strategy:
-            # move = self.expectimax_strategy()
-
-            # Minimax strategy:
-            # move = self.minimax_strategy()
-
-            # Alpha Beta strategy:
-            # move = self.alpha_beta_strategy()
+            move = self.black_strategies[self.black_strategy](self.board)
         else:
-            move = self.greedy_agent_white.getAction(self.board)
+            move = self.white_strategies[self.white_strategy](self.board)
 
         if move is None:
             if self.board:
@@ -139,21 +149,40 @@ class GoGame:
             self.reset_game()
         else:
             self.finished = True
+            print("end game")
 
     def run(self):
         self.play_game_step()
 
 
 if __name__ == "__main__":
+    black_strategies = ["random", "greedy", "minimax", "expectimax", "monte_carlo"]
+    white_strategies = ["random", "greedy"]
+    if len(sys.argv) != 5 \
+            or sys.argv[1] not in black_strategies \
+            or sys.argv[2] not in white_strategies \
+            or not sys.argv[3].isdigit()\
+            or int(sys.argv[3]) < 1\
+            or sys.argv[4] not in ["display", "not_display"]:
+        print("put in the command line: goGameAI.py "
+              "<BLACK-STRATEGY> <WHITE-STRATEGY> <NUMBER-OF-GAME> <DISPLAY-BOARD (display | not_display)>")
+        print("BLACK-STRATEGY: ", str(black_strategies))
+        print("WHITE-STRATEGY: ", str(white_strategies))
+        exit()
+
     size = 5
-    num_games = 10
+    black_strategy = sys.argv[1]
+    while_strategy = sys.argv[2]
+    num_games = int(sys.argv[3])
+    is_display = sys.argv[4] == "display"
 
     root = tk.Tk()
     root.title("Go Game")
 
     display = GoDisplay(root, size)
 
-    game = GoGame(size, num_games, display)
+    game = GoGame(size, num_games, black_strategy, while_strategy, display, is_display)
+    print("start game")
     game.run()
 
     root.mainloop()
