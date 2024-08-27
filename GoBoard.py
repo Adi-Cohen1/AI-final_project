@@ -67,7 +67,7 @@ class GoBoard:
             if neighbor_color is not None and neighbor_color != color:
                 neighbor_group = self.get_group(nx, ny)
                 if not self.has_liberties(neighbor_group):
-                    self.previous_boards.add(tuple(map(tuple, self.board)))  # Track board state
+                    # self.previous_boards.add(tuple(map(tuple, self.board)))  # Track board state
                     self.remove_group(neighbor_group, neighbor_color)
                     captured_any = True
 
@@ -149,25 +149,28 @@ class GoBoard:
         if self.board[x][y] is not None:
             return False
 
-        board_copy = [row.copy() for row in self.board]
-        board_copy[x][y] = color
+        board_copy = self.copy()
+        board_copy.board[x][y] = color
         # Ko rule: check if this move reverts the board to a previous state
-        if tuple(map(tuple, board_copy)) in self.previous_boards:
+        if tuple(map(tuple, board_copy.board)) in self.previous_boards:
             return False
 
         # Check if move results in a capture or if it has liberties
         for nx, ny in self.get_neighbors(x, y):
-            neighbor_color = board_copy[nx][ny]
+            neighbor_color = board_copy.board[nx][ny]
             if neighbor_color is not None and neighbor_color != color:
-                neighbor_group = self.get_group(nx, ny, board_copy)
+                neighbor_group = self.get_group(nx, ny, board_copy.board)
                 # check:
                 if neighbor_group == self.last_captured[color]:
                     return False
-                if not self.has_liberties(neighbor_group, board_copy):
+                if not self.has_liberties(neighbor_group, board_copy.board):
+                    board_copy.remove_group(neighbor_group, neighbor_color)
+                    if tuple(map(tuple, board_copy.board)) in self.previous_boards:
+                        return False
                     return True
 
-        player_group = self.get_group(x, y, board_copy)
-        if not self.has_liberties(player_group, board_copy):
+        player_group = self.get_group(x, y, board_copy.board)
+        if not self.has_liberties(player_group, board_copy.board):
             return False
 
         return True
