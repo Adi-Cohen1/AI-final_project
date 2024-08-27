@@ -10,7 +10,7 @@ from Agents import RandomAgent,GreedyAgent
 import matplotlib.pyplot as plt
 
 
-SPEED = 1
+SPEED = 5000
 
 class GoGame:
     def __init__(self, size: int, num_games: int, display: GoDisplay):
@@ -29,10 +29,8 @@ class GoGame:
         self.random_agent_black = GreedyAgent('BLACK')
         self.black_wins = 0
         self.white_wins = 0
-        self.captured_black = []
-        self.captured_white = []
-        self.territory_black = []
-        self.territory_white = []
+        self.result_black = []
+        self.result_white = []
 
     def is_game_over(self) -> bool:
         black_moves = any(self.board.is_legal_move(x, y, 'BLACK') for x in range(self.size) for y in range(self.size))
@@ -97,10 +95,8 @@ class GoGame:
         self.display.root.after(SPEED, self.play_game_step)
 
     def update_statistics(self, result):
-        self.captured_black.append(self.board.captured['BLACK'])
-        self.captured_white.append(self.board.captured['WHITE'])
-        self.territory_black.append(self.board.controlled_territory('BLACK'))
-        self.territory_white.append(self.board.controlled_territory('WHITE'))
+        self.result_black.append(self.board.captured['BLACK'])
+        self.result_white.append(self.board.captured['WHITE'])
 
         if result["BLACK"] > result["WHITE"]:
             self.black_wins += 1
@@ -133,35 +129,25 @@ class GoGame:
         labels = ['Black Wins', 'White Wins']
         wins = [self.black_wins, self.white_wins]
 
-        plt.bar(labels, wins, color=['black', 'gray'])
-        plt.xlabel('Player')
-        plt.ylabel('Number of Wins')
+        # Plotting the pie chart
+        plt.figure(figsize=(8, 8))
+        plt.pie(wins, labels=labels, colors=['black', 'green'], autopct='%1.1f%%', startangle=140)
         plt.title(f'Results After {self.num_games} Games')
         plt.show()
 
-
+        # Data for the second plot (Captured Stones Over Time)
         plt.figure(figsize=(12, 6))
-        # Plotting captured stones
-        plt.figure(figsize=(12, 6))
-        plt.subplot(1, 2, 1)
-        plt.plot(range(len( self.captured_black)), self.captured_black, label='Black Captured', color='black')
-        plt.plot(range(len( self.captured_white)), self.captured_white, label='White Captured', color='green')
+        plt.plot(range(len(self.result_black)), self.result_black, label='Black Captured', color='black')
+        plt.plot(range(len(self.result_white)), self.result_white, label='White Captured', color='green')
         plt.xlabel('Game Number')
-        plt.ylabel('Stones Captured')
-        plt.title('Captured Stones Over Time')
+        plt.ylabel('Score')
+        plt.title(f'Score Over {self.num_games} Games')
         plt.legend()
-
-
-        plt.subplot(1, 2, 2)
-        plt.plot(range(len( self.territory_black)), self.territory_black, label='Black Territory', color='blue')
-        plt.plot(range(len( self.territory_white)), self.territory_white, label='White Territory', color='orange')
-        plt.xlabel('Game Number')
-        plt.ylabel('Controlled Territory')
-        plt.title('Controlled Territory Over Time')
-        plt.legend()
-
-        plt.tight_layout()
         plt.show()
+
+
+
+
 
     def run(self):
         self.play_game_step()

@@ -11,6 +11,7 @@ from Agents import RandomAgent, GreedyAgent
 
 
 class GoGame:
+
     def __init__(self, size: int, num_games: int, display: GoDisplay, mcts_iterations: int = 1000,
                  exploration_weight: float = 1.0):
         self.size = size
@@ -25,7 +26,7 @@ class GoGame:
         self.previous_boards = set()
         # self.mcts_iterations = mcts_iterations
         # self.exploration_weight = exploration_weight
-        self.speed = 100
+        self.speed = 2
         self.first_turn = True
         # self.expectimax_agent = Expectimax(self.current_color)
         self.random_agent_white = RandomAgent('WHITE')
@@ -54,7 +55,7 @@ class GoGame:
 
         if self.current_color == 'BLACK':
             # Monte Carlo strategy:
-            # move = self.monte_carlo_strategy()
+            move = self.monte_carlo_strategy()
 
             # Expectimax strategy:
             # move = self.expectimax_strategy()
@@ -63,7 +64,7 @@ class GoGame:
             # move = self.minimax_strategy()
 
             # Alpha Beta strategy:
-            move = self.alpha_beta_strategy()
+            # move = self.alpha_beta_strategy()
         else:
             move = self.greedy_agent_white.getAction(self.board)
 
@@ -94,7 +95,8 @@ class GoGame:
         self.display.root.after(self.speed, self.play_game_step)
 
     def monte_carlo_strategy(self):
-        mcts = MCTS(self.board, self.current_color, mcts_iterations=50, exploration_weight=0.1)
+        mcts = MCTS(self.board, self.current_color,self.greedy_agent_white, mcts_iterations=50, exploration_weight=1.5
+                    )
         move = mcts.mcts_search()
         return move
 

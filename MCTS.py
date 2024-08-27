@@ -5,6 +5,8 @@ from Minimax import Minimax
 
 from GoBoard import GoBoard
 
+from Agents import RandomAgent, GreedyAgent
+
 class MCTSNode:
     def __init__(self, board, color: str, move: Optional[Tuple[int, int]] = None, parent: Optional['MCTSNode'] = None):
         self.board = board
@@ -34,11 +36,12 @@ class MCTSNode:
 
 
 class MCTS:
-    def __init__(self, board: GoBoard, color: str, mcts_iterations: int, exploration_weight: float):
+    def __init__(self, board: GoBoard, color: str, agent_white: GreedyAgent,mcts_iterations: int, exploration_weight: float):
         self.board = board
         self.color = color
         self.iterations = mcts_iterations
         self.exploration_weight = exploration_weight
+        self.agent_white = agent_white
 
     def mcts_search(self) -> Optional[Tuple[int, int]]:
         root = MCTSNode(self.board, self.color)
@@ -77,8 +80,11 @@ class MCTS:
 
         # Getting value to node using simulate random game (original MCTS):
         i = 0
-        while not board_copy.is_terminal(current_color) and i < 20:
-            move = board_copy.random_move(current_color)
+        while not board_copy.is_terminal(current_color) and i < 50:
+            if current_color == 'BLACK':
+                move = board_copy.random_move(current_color)
+            else:
+                move = self.agent_white.getAction(board_copy)
             if move:
                 board_copy.play_move(*move, current_color)
                 current_color = 'WHITE' if current_color == 'BLACK' else 'BLACK'
@@ -86,7 +92,6 @@ class MCTS:
 
         return self._evaluate_board(board_copy, "BLACK")
         # return board_copy.evaluate_board_using_heuristic("BLACK")
-
 
     def _evaluate_board(self, board: GoBoard, color: str) -> float:
         scores = board.count_score()
