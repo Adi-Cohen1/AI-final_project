@@ -107,32 +107,6 @@ class GoBoard:
         # self.history.append((x, y, color, board_copy, captured_before))
         return True
 
-    # def undo_move(self):
-    #     if not self.history:
-    #         return
-    #     x, y, color, board_copy, captured_before = self.history.pop()
-    #     self.board = board_copy
-    #     self.captured = captured_before
-    #     self.board[x][y] = None
-    #     if self.previous_boards:
-    #         self.previous_boards.pop()
-
-    # def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
-    #     """
-    #     Check if all empty spaces in the given group are fully surrounded by the specified color.
-    #     """
-    #     for x, y in group:
-    #         for nx, ny in self.get_neighbors(x, y):
-    #             if self.board[nx][ny] is None:
-    #                 return False
-    #             elif self.board[nx][ny] != color:
-    #                 # If adjacent to any color other than the specified one,
-    #                 # check that all neighboring empty groups are surrounded by that color
-    #                 adjacent_group = self.get_group(nx, ny, self.board)
-    #                 if any(self.board[xx][yy] != color for xx, yy in adjacent_group if self.board[xx][yy] is not None):
-    #                     return False
-    #     return True
-
     def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
         """
         Check if all empty spaces in the given group are fully surrounded by the specified color.
@@ -288,6 +262,14 @@ class GoBoard:
         score += self.get_captures(color) * 3
         score += self.potential_liberties(color) * 2
         score += self.corner_and_edge_control(color) * 4
+        return score
+
+    def evaluate_board_using_heuristic2(self, color: str) -> int:
+        score = 0
+        score += self.stone_count(color) * 1  # Weighting can be adjusted
+        score += self.controlled_territory(color) * 5
+        score += self.get_captures(color) * 3
+        score += self.potential_liberties(color) * 2
         return score
 
     # todo: ^ end my adding ^

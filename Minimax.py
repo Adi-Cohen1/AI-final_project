@@ -32,13 +32,15 @@ class Minimax:
             return self.memo[(board_key, color, depth)]
 
         if depth == 0:
-            value = board.evaluate_board_using_heuristic(color)
+            # value = board.evaluate_board_using_heuristic(color)
+            value = board.evaluate_board(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
         moves = board.get_legal_moves(color)
         if not moves:
-            value = board.evaluate_board_using_heuristic(color)
+            # value = board.evaluate_board_using_heuristic(color)
+            value = board.evaluate_board(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
@@ -52,16 +54,13 @@ class Minimax:
             self.memo[(board_key, color, depth)] = best_value
             return best_value
         else:
-            best_value_for_black = -float('inf')
             best_value = float('inf')
             for move in moves:
                 board_copy = board.copy()
                 board_copy.play_move(*move, color)
                 value = self._minimax_search(board_copy, board.opponent_color(color), depth - 1, True)
                 best_value = min(best_value, value)
-                best_value_for_black = max(best_value_for_black, value)
             self.memo[(board_key, color, depth)] = best_value
-            # self.memo[(board_key, color, depth)] = best_value_for_black
             return best_value
 
     def _board_to_key(self, board: 'GoBoard') -> str:

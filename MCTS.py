@@ -42,6 +42,7 @@ class MCTS:
         self.iterations = mcts_iterations
         self.exploration_weight = exploration_weight
         self.agent_white = agent_white
+        self.agent_black = GreedyAgent('BLACK')
 
     def mcts_search(self) -> Optional[Tuple[int, int]]:
         root = MCTSNode(self.board, self.color)
@@ -80,11 +81,13 @@ class MCTS:
 
         # Getting value to node using simulate random game (original MCTS):
         i = 0
-        while not board_copy.is_terminal(current_color) and i < 50:
+        while not board_copy.is_terminal(current_color) and i < 20:
             if current_color == 'BLACK':
                 move = board_copy.random_move(current_color)
+                # move = self.agent_black.getAction(board_copy)
             else:
-                move = self.agent_white.getAction(board_copy)
+                # move = self.agent_white.getAction(board_copy)
+                move = board_copy.random_move(current_color)
             if move:
                 board_copy.play_move(*move, current_color)
                 current_color = 'WHITE' if current_color == 'BLACK' else 'BLACK'

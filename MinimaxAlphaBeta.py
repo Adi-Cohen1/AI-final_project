@@ -1,6 +1,8 @@
 import random
 from typing import Tuple, Optional, Dict
 
+
+OPPONENT_COLOR = {"BLACK": "WHITE", "WHITE": "BLACK"}
 class MinimaxAlphaBeta:
     def __init__(self, board, color: str):
         self.board = board
@@ -33,13 +35,19 @@ class MinimaxAlphaBeta:
             return self.memo[(board_key, color, depth)]
 
         if depth == 0:
-            value = board.evaluate_board_using_heuristic(color)
+            value = board.evaluate_board_using_heuristic(color) - board.evaluate_board_using_heuristic(OPPONENT_COLOR[color])
+            # value = board.evaluate_board_using_heuristic(color)
+            # value = board.evaluate_board_using_heuristic_for_minimax(color)
+            # value = board.evaluate_board(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
         moves = board.get_legal_moves(color)
         if not moves:
-            value = board.evaluate_board_using_heuristic(color)
+            value = board.evaluate_board_using_heuristic(color) - board.evaluate_board_using_heuristic(OPPONENT_COLOR[color])
+            # value = board.evaluate_board_using_heuristic(color)
+            # value = board.evaluate_board_using_heuristic_for_minimax(color)
+            # value = board.evaluate_board(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
@@ -56,19 +64,16 @@ class MinimaxAlphaBeta:
             self.memo[(board_key, color, depth)] = best_value
             return best_value
         else:
-            best_value_for_black = -float('inf')
             best_value = float('inf')
             for move in moves:
                 board_copy = board.copy()
                 board_copy.play_move(*move, color)
                 value = self._minimax_search(board_copy, board.opponent_color(color), depth - 1, alpha, beta, True)
                 best_value = min(best_value, value)
-                best_value_for_black = min(best_value_for_black, value)
                 beta = min(beta, value)
                 if beta <= alpha:
                     break  # Alpha cut-off
             self.memo[(board_key, color, depth)] = best_value
-            # self.memo[(board_key, color, depth)] = best_value_for_black
             return best_value
 
     def _board_to_key(self, board: 'GoBoard') -> str:
