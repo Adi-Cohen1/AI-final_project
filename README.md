@@ -3,7 +3,7 @@ This project implements an AI to play the game of Go with various strategies for
 
 # Requirements
 - Python 3.x
-- Install required packages (if any) by running:
+- Install required packages by running:
   ```bash
   pip install -r requirements.txt
   ```
