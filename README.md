@@ -1,5 +1,5 @@
 # Go Game AI
-This project implements an AI to play the game of Go with various strategies for both black and white players. The AI can be customized with different strategies for each player, and it allows you to run multiple games and choose whether to display the board during gameplay.
+This project implements an AI to play the game of Go with various strategies for both black and white players. The AI can be customized with different strategies for each player, and it allows you to run multiple games.
 
 # Requirements
 - Python 3.x
