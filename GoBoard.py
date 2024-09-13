@@ -7,14 +7,7 @@ class GoBoard:
     def __init__(self, size: int, previous_boards):
         self.size = size
         self.board = [[None for _ in range(size)] for _ in range(size)]
-        # self.board = [['BLACK', 'BLACK', 'BLACK', 'WHITE', None],
-        #               ['BLACK', 'BLACK', 'BLACK', 'BLACK', 'WHITE'],
-        #               ['BLACK', 'BLACK', 'BLACK', None, 'WHITE'],
-        #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE'],
-        #               ['BLACK', 'BLACK', 'BLACK', 'WHITE', 'WHITE']]
         self.captured = {'BLACK': 0, 'WHITE': 0}
-        # self.history = []  # Track moves for undo
-        # self.previous_boards = []  # Track board states for Ko rule
         self.previous_boards = previous_boards
         self.last_captured = {'BLACK': None, 'WHITE': None}
 
@@ -320,6 +313,10 @@ class GoBoard:
         black_score = count_area('BLACK') + self.captured['WHITE']
         white_score = count_area('WHITE') + self.captured['BLACK']
         return {'BLACK': black_score, 'WHITE': white_score}
+
+
+    def null_heuristic(self, color: str) -> int:
+        return 0
 
     def copy(self):
         # Create a deep copy of the GoBoard instance
