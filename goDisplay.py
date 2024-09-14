@@ -4,8 +4,20 @@ from typing import List, Dict
 from GoBoard import GoBoard
 
 class GoDisplay:
+    """
+    Class responsible for displaying the Go board, managing the UI components,
+    and showing game results such as captured stones and the score summary.
+    """
 
     def __init__(self, root, board_size):
+        """
+         Initializes the GoDisplay object, sets up the UI components, loads images,
+         and draws the initial board.
+
+         Args:
+             root: The root Tkinter window.
+             board_size: The size of the Go board (number of rows/columns).
+         """
         self.root = root
         self.board_size = board_size
         self.num_wins_by_games = {"BLACK": 0, "WHITE": 0, "TIE":0}
@@ -32,10 +44,19 @@ class GoDisplay:
         self.draw_grid()
 
     def make_game_summary(self):
+        """
+             Creates a frame for displaying the game summary, including the score and results.
+             """
         self.game_summary = tk.Frame(self.board_frame, bg="white")
         self.game_summary.pack(side='bottom', expand=True, fill='both')
 
     def make_captured_stone_board(self, board_size):
+        """
+           Creates frames and canvases to display the captured stones for both players.
+
+           Args:
+               board_size: The size of the Go board (for calculating canvas dimensions).
+           """
         # Frame for captured stones
         self.captured_frame = tk.Frame(self.main_frame, bg='navajo white')#
         self.captured_frame.pack(side='right', expand=True, fill='both')
@@ -52,6 +73,12 @@ class GoDisplay:
 
 
     def make_board(self, board_size):
+        """
+         Creates the main canvas for displaying the Go board.
+
+         Args:
+             board_size: The size of the Go board (number of rows/columns).
+         """
         # Frame for the Go board
         self.board_frame = tk.Frame(self.main_frame)
         self.board_frame.pack(side='left', expand=True, fill='both')
@@ -64,7 +91,9 @@ class GoDisplay:
         self.canvas.create_image(0, 0, anchor='nw', image=self.board_photo)
 
     def draw_grid(self):
-
+        """
+              Draws the grid lines on the Go board.
+          """
         line_width = 3  # Adjust this value to make the lines thicker
         for i in range(self.board_size):
             self.canvas.create_line(30, 30 + i * 60, 30 + (self.board_size - 1) * 60, 30 + i * 60, fill='black',
@@ -73,6 +102,13 @@ class GoDisplay:
                                     width=line_width)
 
     def draw_captured_stones(self, black_captured, white_captured):
+        """
+          Draws the captured stones on the respective canvas for each player.
+
+          Args:
+              black_captured: Number of black stones captured by white.
+              white_captured: Number of white stones captured by black.
+          """
         # Clear the canvas for new drawing
         self.black_canvas.delete("all")
         self.white_canvas.delete("all")
@@ -104,6 +140,12 @@ class GoDisplay:
             self.white_canvas.create_image(x0, y0, anchor='nw', image=self.white_stone_photo)
 
     def display_board(self, board: GoBoard):
+        """
+           Displays the current board state and updates the UI with captured stones and scores.
+
+           Args:
+               board: The current state of the GoBoard object.
+           """
         self.canvas.delete("all")
         self.canvas.create_image(0, 0, anchor='nw', image=self.board_photo)
         self.draw_grid()
@@ -120,6 +162,14 @@ class GoDisplay:
         tk.Label(self.game_summary, text=results_str, font=("Arial",14), bg="white").pack(expand=True)
 
     def draw_stone(self, x: int, y: int, color: str):
+        """
+         Draws a stone on the board at the specified coordinates.
+
+         Args:
+             x: The x-coordinate on the board.
+             y: The y-coordinate on the board.
+             color: The color of the stone ('black' or 'white').
+         """
         x1, y1 = 30 + x * 60 - 20, 30 + y * 60 - 20
         if color.lower() == 'black':
             self.canvas.create_image(x1, y1, anchor='nw', image=self.black_stone_photo)
@@ -127,6 +177,15 @@ class GoDisplay:
             self.canvas.create_image(x1, y1, anchor='nw', image=self.white_stone_photo)
 
     def get_winner_name(self, result):
+        """
+        Determines the winner based on the final game results.
+
+        Args:
+            result: A dictionary containing the scores of both players.
+
+        Returns:
+            A string indicating the winner ('BLACK', 'WHITE', or 'TIE').
+        """
         if result['BLACK'] > result['WHITE']:
             return "BLACK"
         elif result['BLACK'] < result['WHITE']:
@@ -135,12 +194,24 @@ class GoDisplay:
             return "TIE"
 
     def get_score_summary(self):
+        """
+         Generates a summary of the scores.
+
+         Returns:
+             A formatted string representing the current score summary.
+         """
         black_score = str(self.num_wins_by_games["BLACK"])
         white_score = str(self.num_wins_by_games["WHITE"])
         tie_score = str(self.num_wins_by_games["TIE"])
         return "BLACK: " + black_score + "\nWHITE: " + white_score + "\nTIE: " + tie_score
 
     def display_results(self, results: List[Dict[str, int]]):
+        """
+         Updates the game summary with the results of the most recent game and cumulative wins.
+
+         Args:
+             results: A list of dictionaries, where each dictionary contains the result of a game.
+         """
         # Clear previous content in game_summary frame
         for widget in self.game_summary.winfo_children():
             widget.destroy()

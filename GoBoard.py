@@ -5,6 +5,19 @@ from copy import deepcopy, copy
 
 class GoBoard:
     def __init__(self, size: int, previous_boards):
+        """
+        Initializes a GoBoard instance with a given size and a list of previous board states.
+
+        Args:
+        size (int): The size of the Go board (e.g., 9x9, 19x19).
+        previous_boards (list): A list of previous board configurations to detect repetitions (ko).
+
+        Attributes:
+        board (list): A 2D list representing the current state of the Go board, where each position can be None, 'BLACK', or 'WHITE'.
+        captured (dict): Tracks the number of stones captured by 'BLACK' and 'WHITE' players.
+        previous_boards (list): Stores previous board states to help detect ko.
+        last_captured (dict): Keeps track of the most recent capture made by each player.
+        """
         self.size = size
         self.board = [[None for _ in range(size)] for _ in range(size)]
         self.captured = {'BLACK': 0, 'WHITE': 0}
@@ -12,13 +25,45 @@ class GoBoard:
         self.last_captured = {'BLACK': None, 'WHITE': None}
 
     def is_on_board(self, x: int, y: int) -> bool:
+        """
+        Checks if the given coordinates are within the boundaries of the board.
+
+        Args:
+        x (int): The x-coordinate.
+        y (int): The y-coordinate.
+
+        Returns:
+        bool: True if the coordinates are on the board, False otherwise.
+        """
         return 0 <= x < self.size and 0 <= y < self.size
 
     def get_neighbors(self, x: int, y: int) -> List[Tuple[int, int]]:
+        """
+        Retrieves the list of valid neighboring coordinates for a given position on the board.
+
+        Args:
+        x (int): The x-coordinate of the stone.
+        y (int): The y-coordinate of the stone.
+
+        Returns:
+        List[Tuple[int, int]]: A list of valid neighboring coordinates.
+        """
         neighbors = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         return [(nx, ny) for nx, ny in neighbors if self.is_on_board(nx, ny)]
 
     def get_group(self, x: int, y: int, board: Optional[List[List[Optional[str]]]] = None) -> Set[Tuple[int, int]]:
+        """
+        Finds all stones connected to the given stone (i.e., the group of connected stones).
+
+        Args:
+        x (int): The x-coordinate of the starting stone.
+        y (int): The y-coordinate of the starting stone.
+        board (Optional[List[List[Optional[str]]]]): Optionally pass a different board to check the group on.
+        If not provided, the current board is used.
+
+        Returns:
+        Set[Tuple[int, int]]: A set of coordinates representing the stones in the same group.
+        """
         board = board or self.board
         color = board[x][y]
         group = set()
@@ -33,6 +78,16 @@ class GoBoard:
         return group
 
     def has_liberties(self, group: Set[Tuple[int, int]], board: Optional[List[List[Optional[str]]]] = None) -> bool:
+        """
+        Checks if a group of stones has at least one liberty (empty adjacent position).
+
+        Args:
+        group (Set[Tuple[int, int]]): A set of coordinates representing a group of connected stones.
+        board (Optional[List[List[Optional[str]]]]): Optionally pass a different board to check on. If not provided, the current board is used.
+
+        Returns:
+        bool: True if the group has at least one liberty, False otherwise.
+        """
         board = board or self.board
         for x, y in group:
             for nx, ny in self.get_neighbors(x, y):
@@ -41,12 +96,34 @@ class GoBoard:
         return False
 
     def remove_group(self, group: Set[Tuple[int, int]], color: str):
+        """
+        Removes a group of stones from the board and updates the captured stones count for the opposing player.
+
+        Args:
+        group (Set[Tuple[int, int]]): A set of coordinates representing a group of connected stones to be removed.
+        color (str): The color of the stones being removed (either 'BLACK' or 'WHITE').
+        """
         for x, y in group:
             self.board[x][y] = None
-        # print(f"{oposite_color[color]} eat {len(group)} {color}S ")
         self.captured[color] += len(group)
 
     def play_move(self, x: int, y: int, color: str) -> bool:
+        """
+        Attempt to play a move for the given color at position (x, y).
+
+        Args:
+            x (int): The x-coordinate of the move.
+            y (int): The y-coordinate of the move.
+            color (str): The color of the stone to place ('BLACK' or 'WHITE').
+
+        Returns:
+            bool: True if the move is valid and successfully played, False otherwise.
+
+        This function first checks if the move is valid (on the board and not already occupied).
+        Then it simulates placing the stone and checks for any neighboring stones of the opposite color
+        to see if any group can be captured (no liberties). If no captures occur, it checks if the group
+        formed by the placed stone has any liberties. If the group has no liberties, the move is reverted.
+        """
         if not self.is_on_board(x, y) or self.board[x][y] is not None:
             return False
 
@@ -60,7 +137,6 @@ class GoBoard:
             if neighbor_color is not None and neighbor_color != color:
                 neighbor_group = self.get_group(nx, ny)
                 if not self.has_liberties(neighbor_group):
-                    # self.previous_boards.add(tuple(map(tuple, self.board)))  # Track board state
                     self.remove_group(neighbor_group, neighbor_color)
                     captured_any = True
 
@@ -69,12 +145,22 @@ class GoBoard:
             self.captured = captured_before
             return False
 
-        # self.history.append((x, y, color, board_copy, captured_before))
-        # Update last moves history
-
         return True
 
     def play_actual_move(self, x: int, y: int, color: str) -> bool:
+        """
+        Similar to play_move, this function attempts to place a stone and apply capture logic.
+
+        Args:
+            x (int): The x-coordinate of the move.
+            y (int): The y-coordinate of the move.
+            color (str): The color of the stone ('BLACK' or 'WHITE').
+
+        Returns:
+            bool: True if the move is valid, False otherwise.
+
+        This function also tracks the last captured group for future Ko-rule checks.
+        """
         if not self.is_on_board(x, y) or self.board[x][y] is not None:
             return False
 
@@ -97,12 +183,18 @@ class GoBoard:
             self.captured = captured_before
             return False
 
-        # self.history.append((x, y, color, board_copy, captured_before))
         return True
 
     def is_surrounded(self, group: Set[Tuple[int, int]], color: str) -> bool:
         """
         Check if all empty spaces in the given group are fully surrounded by the specified color.
+
+        Args:
+            group (Set[Tuple[int, int]]): The group of empty spaces to check.
+            color (str): The color that should be surrounding the empty group.
+
+        Returns:
+            bool: True if all empty spaces in the group are surrounded by stones of the given color, False otherwise.
         """
         for x, y in group:
             for nx, ny in self.get_neighbors(x, y):
@@ -113,6 +205,17 @@ class GoBoard:
         return True  # All adjacent stones are of the specified color and no empty spaces are adjacent
 
     def is_legal_move(self, x: int, y: int, color: str) -> bool:
+        """
+        Check if placing a stone of the given color at the specified coordinates is a legal move.
+
+        Args:
+            x (int): The x-coordinate of the move.
+            y (int): The y-coordinate of the move.
+            color (str): The color of the stone to be placed.
+
+        Returns:
+            bool: True if the move is legal, False otherwise.
+        """
         if self.board[x][y] is not None:
             return False
 
@@ -144,7 +247,13 @@ class GoBoard:
 
     def get_legal_moves(self, color: str) -> List[Tuple[int, int]]:
         """
-        Return a list of legal moves for the given color.
+        Return a list of all legal moves for the given color.
+
+        Args:
+            color (str): The color of the stones for which to find legal moves.
+
+        Returns:
+            List[Tuple[int, int]]: A list of coordinates where legal moves can be made.
         """
         return [
             (x, y)
@@ -154,36 +263,91 @@ class GoBoard:
         ]
 
     def random_move(self, color: str) -> Optional[Tuple[int, int]]:
+        """
+        Select a random legal move for the given color.
+
+        Args:
+            color (str): The color of the player making the move.
+
+        Returns:
+            Optional[Tuple[int, int]]: Coordinates of a random legal move, or None if no legal moves are available.
+        """
         legal_moves = self.get_legal_moves(color)
         return random.choice(legal_moves) if legal_moves else None
 
     def is_terminal(self, color):
-        # Check if there are no legal moves left for either player
-        if len(self.get_legal_moves(color)) == 0:
-            # Assume both players passed in a row if no moves are available
-            return True
+        """
+         Determine if the game is in a terminal state, meaning no legal moves are left for the given player.
 
+         Args:
+             color (str): The color of the player.
+
+         Returns:
+             bool: True if there are no legal moves left for either player, False otherwise.
+         """
+        if len(self.get_legal_moves(color)) == 0:
+            return True
         return False
 
     def evaluate_board(self, color: str) -> float:
         """
-        Evaluate the board from the perspective of the given color.
-        """
+         Evaluate the current board state from the perspective of the given color.
+
+         Args:
+             color (str): The color for which the evaluation is being performed.
+
+         Returns:
+             float: The evaluation score, which is the difference between the scores of the player and the opponent.
+         """
         opponent_color = self.opponent_color(color)
         return self.count_score()[color] - self.count_score()[opponent_color]
 
     def get_state(self):
+        """
+        Returns the current state of the board.
+
+        Returns:
+            list: The current board configuration.
+        """
         return self.board
 
-    # todo: I added some heuristic methods :
     def stone_count(self, color: str) -> int:
+        """
+        Count the number of stones of a specific color on the board.
+
+        Args:
+            color (str): The color of the stones to count ('BLACK' or 'WHITE').
+
+        Returns:
+            int: The number of stones of the specified color on the board.
+        """
         return sum(row.count(color) for row in self.board)
 
     def controlled_territory(self, color: str) -> int:
+        """
+          Calculate the controlled territory for a given color by counting the number of empty spaces
+          surrounded by the color's stones.
+
+          Args:
+              color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+          Returns:
+              int: The score of the controlled territory for the given color.
+          """
         visited = set()
         territory_score = 0
 
         def flood_fill(x: int, y: int) -> Set[Tuple[int, int]]:
+            """
+               Perform a flood fill to find all connected empty spaces.
+
+               Args:
+                   x (int): The x-coordinate of the starting point.
+                   y (int): The y-coordinate of the starting point.
+
+               Returns:
+                   Set[Tuple[int, int]]: A set of coordinates representing the empty spaces.
+               """
             stack = [(x, y)]
             group = set()
             while stack:
@@ -208,14 +372,39 @@ class GoBoard:
         return territory_score
 
     def get_captures(self, color: str) -> int:
+        """
+          Retrieve the number of opponent's stones that have been captured by the given color.
+
+          Args:
+              color (str): The color of the player whose captures are to be retrieved ('BLACK' or 'WHITE').
+
+          Returns:
+              int: The number of opponent's stones captured.
+          """
         opponent = 'WHITE' if color == 'BLACK' else 'BLACK'
         return self.captured[opponent]  # Assuming captures is a dictionary tracking captured stones
 
     def potential_liberties(self, color: str) -> int:
+        """
+          Count the potential liberties (empty spaces adjacent to the stones) for a given color.
+
+          Args:
+              color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+          Returns:
+              int: The number of potential liberties for the given color.
+          """
         visited = set()
         liberty_count = 0
 
         def count_liberties(x: int, y: int):
+            """
+            Count the number of liberties for a group of stones.
+
+            Args:
+                x (int): The x-coordinate of the starting point.
+                y (int): The y-coordinate of the starting point.
+            """
             nonlocal liberty_count  # Declare that we are using the outer variable
             stack = [(x, y)]
             while stack:
@@ -239,6 +428,15 @@ class GoBoard:
         return liberty_count
 
     def corner_and_edge_control(self, color: str) -> int:
+        """
+        Evaluate the control over corners and edges for a given color.
+
+        Args:
+            color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+        Returns:
+            int: The score based on control over corners and edges.
+        """
         score = 0
         for x in range(self.size):
             for y in range(self.size):
@@ -249,6 +447,16 @@ class GoBoard:
         return score
 
     def evaluate_board_using_heuristic(self, color: str) -> int:
+        """
+          Evaluate the board using a specific heuristic, combining stone count, controlled territory,
+          captured stones, potential liberties, and corner/edge control.
+
+          Args:
+              color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+          Returns:
+              int: The heuristic score for the given color.
+          """
         score = 0
         score += self.stone_count(color) * 1  # Weighting can be adjusted
         score += self.controlled_territory(color) * 5
@@ -258,6 +466,16 @@ class GoBoard:
         return score
 
     def evaluate_board_using_heuristic2(self, color: str) -> int:
+        """
+        Evaluate the board using an alternative heuristic, focusing on stone count, controlled territory,
+        captured stones, and potential liberties.
+
+        Args:
+            color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+        Returns:
+            int: The heuristic score for the given color.
+        """
         score = 0
         score += self.stone_count(color) * 1  # Weighting can be adjusted
         score += self.controlled_territory(color) * 5
@@ -265,9 +483,16 @@ class GoBoard:
         score += self.potential_liberties(color) * 2
         return score
 
-    # todo: ^ end my adding ^
-
     def opponent_color(self, color: str) -> str:
+        """
+        Get the opponent's color based on the given color.
+
+        Args:
+            color (str): The color of the current player ('BLACK' or 'WHITE').
+
+        Returns:
+            str: The opponent's color.
+        """
         return 'WHITE' if color == 'BLACK' else 'BLACK'
 
     def count_score(self) -> Dict[str, int]:
@@ -275,6 +500,9 @@ class GoBoard:
         Count the score for both BLACK and WHITE players.
         The score is calculated as the number of empty spaces surrounded by the player's stones
         plus the number of opponent's stones captured.
+
+        Returns:
+            Dict[str, int]: A dictionary with scores for 'BLACK' and 'WHITE'.
         """
 
         def count_area(color: str) -> int:
@@ -314,11 +542,25 @@ class GoBoard:
         white_score = count_area('WHITE') + self.captured['BLACK']
         return {'BLACK': black_score, 'WHITE': white_score}
 
-
     def null_heuristic(self, color: str) -> int:
+        """
+        A placeholder heuristic function that returns 0 for any input.
+
+        Args:
+            color (str): The color to evaluate ('BLACK' or 'WHITE').
+
+        Returns:
+            int: Always returns 0.
+        """
         return 0
 
     def copy(self):
+        """
+         Create a deep copy of the current GoBoard instance.
+
+         Returns:
+             GoBoard: A new GoBoard instance with the same board configuration.
+         """
         # Create a deep copy of the GoBoard instance
         new_board = GoBoard(self.size, self.previous_boards)
         new_board.board = deepcopy(self.board)

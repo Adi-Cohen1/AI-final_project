@@ -3,19 +3,35 @@ from typing import Tuple, Optional, Dict
 
 
 class Expectimax:
+    """
+     Class implementing the Expectimax algorithm for the Go game. It evaluates possible moves for the current player
+     and uses an Expectimax search tree to select the optimal move based on the expected value of future game states.
+     """
+
     def __init__(self, board, color: str):
+        """
+           Initializes the Expectimax class with the current board state and player color.
+
+           Args:
+               board: The current GoBoard object representing the game state.
+               color: The color of the player making the move ('BLACK' or 'WHITE').
+           """
         self.board = board
         self.color = color
         self.memo: Dict[str, float] = {}  # Memoization dictionary
 
-    # def __init__(self, color):
-    #     self.color = color
-    #     self.memo: Dict[str, float] = {}  # Memoization dictionary
+
 
     def expectimax(self, depth: int) -> Tuple[Optional[Tuple[int, int]], float]:
         """
-        Perform Expectimax search to find the best move and its expected value.
-        """
+          Performs Expectimax search to find the best move for the current player.
+
+          Args:
+              depth: The depth of the search tree (number of plies to explore).
+
+          Returns:
+              A tuple containing the best move (row, col) and its expected value. If no moves are available, returns (None, -inf).
+          """
         best_move = None
         best_value = -float('inf')
 
@@ -31,6 +47,17 @@ class Expectimax:
 
 
     def _expectimax_search(self, board: 'GoBoard', color: str, depth: int) -> float:
+        """
+        Recursively performs the Expectimax search for a given board state.
+
+        Args:
+            board: The GoBoard object representing the current state of the game.
+            color: The color of the player whose move is being evaluated ('BLACK' or 'WHITE').
+            depth: The depth of the search tree (number of remaining plies to explore).
+
+        Returns:
+            A float representing the expected value of the game state after performing the search.
+        """
         board_key = self._board_to_key(board.board)
 
         # Check memoization
@@ -39,7 +66,8 @@ class Expectimax:
 
         if depth == 0:
             # value = board.evaluate_board(color)
-            value = board.evaluate_board_using_heuristic(color)
+            # value = board.evaluate_board_using_heuristic(color)
+            value = board.evaluate_board_using_heuristic2(color)
             self.memo[(board_key, color, depth)] = value
             return value
 
@@ -71,8 +99,12 @@ class Expectimax:
 
     def _board_to_key(self, board: 'GoBoard') -> str:
         """
-        Convert the board state to a unique key for memoization.
-        """
-        # Implement a unique board state representation
-        # This is a placeholder and should be replaced with a proper method to serialize the board state
+         Converts the current board state into a unique string representation for memoization.
+
+         Args:
+             board: The current GoBoard object.
+
+         Returns:
+             A string representing the current board state that can be used as a key in the memoization dictionary.
+         """
         return str(board)
