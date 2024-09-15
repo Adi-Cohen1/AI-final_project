@@ -3,7 +3,7 @@ import sys
 import random
 from typing import Optional, Tuple
 import tkinter as tk
-from openpyxl import Workbook  # Importing the library to work with Excel
+from openpyxl import Workbook
 from openpyxl.reader.excel import load_workbook
 
 from GoBoard import GoBoard
@@ -48,7 +48,7 @@ class GoGame:
          black_strategies (dict): Dictionary mapping strategy names to strategy functions for black player.
          white_strategies (dict): Dictionary mapping strategy names to strategy functions for white player.
      """
-    def __init__(self, size: int, num_games: int, black_strategy, while_strategy, display, is_display):
+    def __init__(self, size, num_games, black_strategy, while_strategy, display, is_display, save_in_excel=False):
         """
           Initialize the GoGame class with board size, strategies, display, and agents.
 
@@ -65,6 +65,7 @@ class GoGame:
         self.display = display
         if not is_display:
             self.display.root.withdraw()  # Hide the root window
+        self.save_in_excel = save_in_excel
         self.results = []
         self.current_game = 0
         self.current_color = 'BLACK'
@@ -84,15 +85,16 @@ class GoGame:
         self.qlearn_agent_black.load("q_table_against_q_table_diff_heuristic.npy")
 
         # Initialize Excel Workbook and sheet
-        self.results_file = "qlearn_vs_greedy_diff_heuristic.xlsx"
-        if os.path.exists(self.results_file):
-            self.wb = load_workbook(self.results_file)
-            self.ws = self.wb.active
-        else:
-            self.wb = Workbook()  # Create a new workbook if it doesn't exist
-            self.ws = self.wb.active
-            self.ws.title = "Game Results"
-            self.ws.append(["game_num", "black_score", "white_score", "black_wins", "white_wins","tie"])  # Adding headers
+        if self.save_in_excel:
+            self.results_file = f"{self.black_strategy} vs. {self.white_strategy}.xlsx"
+            if os.path.exists(self.results_file):
+                self.wb = load_workbook(self.results_file)
+                self.ws = self.wb.active
+            else:
+                self.wb = Workbook()  # Create a new workbook if it doesn't exist
+                self.ws = self.wb.active
+                self.ws.title = "Game Results"
+                self.ws.append(["game_num", "black_score", "white_score", "black_wins", "white_wins","tie"])  # Adding headers
 
         # Define a dictionary of strategies for BLACK
         self.black_strategies = {
@@ -159,8 +161,9 @@ class GoGame:
                 white_wins = 1 if white_score > black_score else 0
                 tie = 1 if white_score == black_score else 0
 
-                # Add the results to the Excel sheet
-                self.ws.append([self.current_game + 1, black_score, white_score, black_wins, white_wins, tie])
+                if self.save_in_excel:
+                    # Add the results to the Excel sheet
+                    self.ws.append([self.current_game + 1, black_score, white_score, black_wins, white_wins, tie])
 
                 print(f'Game {self.current_game + 1}: BLACK {black_score}, WHITE {white_score}')
                 self.display.display_results(self.results)
@@ -268,8 +271,9 @@ class GoGame:
             white_wins = 1 if white_score > black_score else 0
             tie = 1 if white_score == black_score else 0
 
-            # Add the results to the Excel sheet
-            self.ws.append([self.current_game + 1, black_score, white_score, black_wins, white_wins,tie])
+            if self.save_in_excel:
+                # Add the results to the Excel sheet
+                self.ws.append([self.current_game + 1, black_score, white_score, black_wins, white_wins,tie])
 
             print(f'Game {self.current_game + 1} has ended: BLACK {black_score}, WHITE {white_score}')
             self.display.display_results(self.results)
@@ -281,8 +285,9 @@ class GoGame:
             self.finished = True
             print(self.finished)
             # Save the Excel file after all games are completed
-            self.wb.save(str(self.results_file))
-            print(f"end game and results saved to {self.results_file}")
+            if self.save_in_excel:
+                self.wb.save(str(self.results_file))
+                print(f"end game and results saved to {self.results_file}")
 
     def run(self):
         """
