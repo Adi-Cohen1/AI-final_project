@@ -1,20 +1,20 @@
-# Go Game AI
+# Go Game AI 🤖
 This project implements an AI to play the game of Go with various strategies for both black and white players. The AI can be customized with different strategies for each player, and it allows you to run multiple games.
 
-# Requirements
+# Requirements 📃
 - Python 3.x
 - Install required packages by running:
   ```bash
   pip install -r requirements.txt
   ```
 
-# Running the Project
+# Running the Project 🏃‍♀️‍➡️
 To run the Go Game AI, use the following command in your terminal:
   ```python
   python goGameAI.py <BLACK-STRATEGY> <WHITE-STRATEGY> <NUMBER-OF-GAMES> <DISPLAY-BOARD>
   ```
 
-# Arguments
+# Arguments 🎮
 - **BLACK-STRATEGY**: The strategy for the black player. Choose from:
   - `random`
   - `greedy`
